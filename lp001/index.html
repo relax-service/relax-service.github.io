@@ -1,1 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LP001 接続テスト</title>
+  <style>
+    body{
+      margin:0;
+      background:#fffaf7;
+      color:#2d292b;
+      font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP","Yu Gothic",sans-serif;
+    }
+    main{
+      max-width:720px;
+      margin:0 auto;
+      padding:32px 20px 60px;
+    }
+    .brand{
+      color:#EB6BA4;
+      font-size:22px;
+      font-weight:700;
+      margin-bottom:8px;
+    }
+    h1{
+      font-family:"Yu Mincho","Noto Serif JP",serif;
+      font-size:34px;
+      line-height:1.45;
+      margin:36px 0 18px;
+    }
+    .box{
+      margin-top:34px;
+      background:#fff;
+      border:1px solid #eee3e6;
+      border-radius:14px;
+      padding:22px;
+    }
+    #state{
+      font-size:18px;
+      font-weight:700;
+      margin-top:12px;
+    }
+    #detail{
+      margin-top:10px;
+      color:#766e71;
+      line-height:1.7;
+      font-size:14px;
+    }
+  </style>
+</head>
 
+<body>
+<main>
+  <div class="brand">リラックスサービス</div>
+
+  <h1>勇気を出して夫を誘ったのに、断られた夜。</h1>
+
+  <p>
+    GitHub Pagesから、Googleカレンダーの公開用データだけを取得できるか確認しています。
+  </p>
+
+  <section class="box">
+    <strong>梅津さんの次にお話できる予定</strong>
+    <div id="state">予定を確認しています…</div>
+    <div id="detail">Googleカレンダーの公開データを取得中です。</div>
+  </section>
+</main>
+
+<script>
+const STATUS_URL =
+  'https://script.google.com/macros/s/AKfycbyl5jrBh-O9Zp2eiqddhQykp21fiEDpZBrxJ89byy57cCQq5nsPMZN3yl5K3QdPMjrt3g/exec?action=status';
+
+function render(data) {
+  const state = document.getElementById('state');
+  const detail = document.getElementById('detail');
+
+  if (!data) {
+    state.textContent = '予定を取得できませんでした';
+    detail.textContent = 'ページ表示は成功しています。データ接続だけ確認が必要です。';
+    return;
+  }
+
+  if (data.online) {
+    state.textContent = data.realtime_label || '🟢 今、お話できます';
+    detail.textContent = 'LINE WORKSの現在状態を取得できました。';
+    return;
+  }
+
+  if (data.next_slot && data.next_slot.label) {
+    state.textContent = data.next_slot.label;
+    detail.textContent = 'Googleカレンダーの次回予定を取得できました。';
+    return;
+  }
+
+  state.textContent = '日程調整中';
+  detail.textContent = '現在、公開できる次回予定はありません。';
+}
+
+function loadStatus() {
+  const callbackName =
+    'lpStatus_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+
+  window[callbackName] = function(data) {
+    render(data);
+    delete window[callbackName];
+    script.remove();
+  };
+
+  const script = document.createElement('script');
+
+  script.onerror = function() {
+    render(null);
+    delete window[callbackName];
+  };
+
+  script.src =
+    STATUS_URL +
+    '&callback=' +
+    encodeURIComponent(callbackName) +
+    '&_=' +
+    Date.now();
+
+  document.head.appendChild(script);
+
+  setTimeout(function() {
+    if (window[callbackName]) {
+      render(null);
+      delete window[callbackName];
+      script.remove();
+    }
+  }, 8000);
+}
+
+loadStatus();
+</script>
+
+</body>
+</html>
