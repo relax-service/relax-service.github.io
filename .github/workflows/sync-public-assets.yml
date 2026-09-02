@@ -29,7 +29,6 @@ jobs:
           curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1lzgLdANdXtDxieMI8C-UElqENgzi6ghC&sz=w800' -o assets/images/keiko.jpg
           curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1JvXq3HSVb2DRElRB8hc-14FcD_Yy53AG&sz=w800' -o assets/images/yohira.jpg
           curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=11YgzN3SMcnLR6wq1BtE6Jy4oSZ7jolqn&sz=w800' -o assets/images/umezu.jpg
-          curl -L --fail --retry 3 'https://www.relax-s.com/images/logo.jpg' -o assets/images/logo.jpg
           find assets/images -type f -maxdepth 1 -print -exec file {} \;
           if grep -Il '<html\|<!doctype' assets/images/* 2>/dev/null | grep -q .; then
             echo 'ERROR: one or more downloaded images are HTML rather than image files.' >&2
