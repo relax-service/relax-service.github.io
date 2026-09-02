@@ -16,12 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download public images and audio
+      - name: Download public images, audio and logo
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p assets/images assets/audio
 
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1dYamO90xEwlonx4dUbyz46polHerssqk&export=download&confirm=t' -o assets/images/logo.png
           curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=11mL6p619PZyXRiAgI5e3hW9dPcUxfFcI&export=download&confirm=t' -o assets/images/ogawa.png
           curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1PMb8G-MmR5dpWhfYVQa-PRRdWoaxjm72&export=download&confirm=t' -o assets/images/ohira.png
           curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1fwQ9_PMj1LLwVN2cfciCX2L7ORRJ3h9N&export=download&confirm=t' -o assets/images/sakura.png
@@ -60,6 +61,7 @@ jobs:
           p = Path('lp001/index.html')
           s = p.read_text(encoding='utf-8')
           replacements = {
+              'https://www.relax-s.com/images/logo.jpg': '/assets/images/logo.png',
               'https://drive.google.com/thumbnail?id=1X0NUhyoebHUpaM3rLx0Z8PjCCqkPOoEi&sz=w800': '/assets/images/ogawa.png',
               'https://drive.google.com/thumbnail?id=1-Io23UaTP6d_7ujE0H73EgMOYp4bs--p&sz=w800': '/assets/images/ohira.png',
               'https://drive.google.com/thumbnail?id=10V6-_cvkPYs3r1_zdYWt2CDl8SAwLKx9&sz=w800': '/assets/images/sakura.png',
@@ -81,10 +83,10 @@ jobs:
               if old in s:
                   s = s.replace(old, new)
                   changed += 1
-          if changed != len(replacements):
-              raise SystemExit(f'Expected {len(replacements)} replacements, made {changed}')
+          if changed != 1:
+              raise SystemExit(f'Expected only the remaining logo replacement, made {changed}')
           p.write_text(s, encoding='utf-8')
-          print(f'Replaced {changed} Drive asset URLs in LP001')
+          print('Replaced external logo URL in LP001')
           PY
 
       - name: Commit assets and LP references
@@ -97,6 +99,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No asset changes.'
           else
-            git commit -m 'Publish LP001 image and audio assets on GitHub Pages'
+            git commit -m 'Publish LP001 logo on GitHub Pages'
             git push
           fi
