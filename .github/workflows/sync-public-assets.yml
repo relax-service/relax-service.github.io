@@ -1,4 +1,4 @@
-name: Sync public LP images
+name: Sync public LP assets
 
 on:
   push:
@@ -10,41 +10,93 @@ permissions:
   contents: write
 
 jobs:
-  sync-images:
+  sync-assets:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download public images
+      - name: Download public images and audio
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p assets/images
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1X0NUhyoebHUpaM3rLx0Z8PjCCqkPOoEi&sz=w800' -o assets/images/ogawa.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1-Io23UaTP6d_7ujE0H73EgMOYp4bs--p&sz=w800' -o assets/images/ohira.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=10V6-_cvkPYs3r1_zdYWt2CDl8SAwLKx9&sz=w800' -o assets/images/sakura.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1QGPWfeifL8Z2EI1iDiP7V2masK4SGYiR&sz=w800' -o assets/images/kizashi.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1E7BPgtj7qBE3hA2DMV_Er9LML3BBMf0I&sz=w800' -o assets/images/morita.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1lzgLdANdXtDxieMI8C-UElqENgzi6ghC&sz=w800' -o assets/images/keiko.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1JvXq3HSVb2DRElRB8hc-14FcD_Yy53AG&sz=w800' -o assets/images/yohira.jpg
-          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=11YgzN3SMcnLR6wq1BtE6Jy4oSZ7jolqn&sz=w800' -o assets/images/umezu.jpg
-          find assets/images -type f -maxdepth 1 -print -exec file {} \;
-          if grep -Il '<html\|<!doctype' assets/images/* 2>/dev/null | grep -q .; then
-            echo 'ERROR: one or more downloaded images are HTML rather than image files.' >&2
+          mkdir -p assets/images assets/audio
+
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=11mL6p619PZyXRiAgI5e3hW9dPcUxfFcI&export=download&confirm=t' -o assets/images/ogawa.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1PMb8G-MmR5dpWhfYVQa-PRRdWoaxjm72&export=download&confirm=t' -o assets/images/ohira.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1fwQ9_PMj1LLwVN2cfciCX2L7ORRJ3h9N&export=download&confirm=t' -o assets/images/sakura.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1Kjg7zG2h592NkT0hZkdv1xXdCA800US6&export=download&confirm=t' -o assets/images/kizashi.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1q-hPYAZa6Iv_xP3xd4P9W26tr2KwHrbX&export=download&confirm=t' -o assets/images/morita.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1fkBkVox5IhgouvFJopfaRlVd5bslXsHe&export=download&confirm=t' -o assets/images/keiko.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=13iQQZVADFaLVV4vrdqcaQJ0mobfvYXwK&export=download&confirm=t' -o assets/images/yohira.png
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1FGJ9qD6Cs9E4-dIO_2N-y5NarH8wL2o8&export=download&confirm=t' -o assets/images/umezu.png
+
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1sMe3SCPiefBykKSXjIu8Sdw9dKi4KxOx&export=download&confirm=t' -o assets/audio/ogawa.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1n7tivN3ZkCz4mvlWuPRuNU8CERhqJEBC&export=download&confirm=t' -o assets/audio/ohira.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1osi9RbgHdFuD4i4sPsUrArqEzMEJTJi-&export=download&confirm=t' -o assets/audio/sakura.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=176WSUnt1R8kBV6jLGPYXN0pHNTRW4T9H&export=download&confirm=t' -o assets/audio/kizashi.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1kCA03Cuhv2icd4YEpRi7B6fpopQgAF2i&export=download&confirm=t' -o assets/audio/morita.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=16krt9Z_uhog97JNOnUdd_X35-tvyLKZJ&export=download&confirm=t' -o assets/audio/keiko.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?id=1H2yqGWHrdbkcViobajyQEtScbx-jO3cX&export=download&confirm=t' -o assets/audio/yohira.mp3
+
+          echo 'Downloaded assets:'
+          find assets -type f -maxdepth 2 -print -exec file {} \;
+
+          if grep -Il '<html\|<!doctype' assets/images/* assets/audio/* 2>/dev/null | grep -q .; then
+            echo 'ERROR: one or more downloaded assets are HTML rather than media files.' >&2
             exit 1
           fi
 
-      - name: Commit images
+          file assets/images/*.png | grep -q 'PNG image data'
+          file assets/audio/*.mp3 | grep -Eq 'Audio file|MPEG ADTS|MPEG.*layer|ID3'
+
+      - name: Point LP001 to GitHub-hosted assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('lp001/index.html')
+          s = p.read_text(encoding='utf-8')
+          replacements = {
+              'https://drive.google.com/thumbnail?id=1X0NUhyoebHUpaM3rLx0Z8PjCCqkPOoEi&sz=w800': '/assets/images/ogawa.png',
+              'https://drive.google.com/thumbnail?id=1-Io23UaTP6d_7ujE0H73EgMOYp4bs--p&sz=w800': '/assets/images/ohira.png',
+              'https://drive.google.com/thumbnail?id=10V6-_cvkPYs3r1_zdYWt2CDl8SAwLKx9&sz=w800': '/assets/images/sakura.png',
+              'https://drive.google.com/thumbnail?id=1QGPWfeifL8Z2EI1iDiP7V2masK4SGYiR&sz=w800': '/assets/images/kizashi.png',
+              'https://drive.google.com/thumbnail?id=1E7BPgtj7qBE3hA2DMV_Er9LML3BBMf0I&sz=w800': '/assets/images/morita.png',
+              'https://drive.google.com/thumbnail?id=1lzgLdANdXtDxieMI8C-UElqENgzi6ghC&sz=w800': '/assets/images/keiko.png',
+              'https://drive.google.com/thumbnail?id=1JvXq3HSVb2DRElRB8hc-14FcD_Yy53AG&sz=w800': '/assets/images/yohira.png',
+              'https://drive.google.com/thumbnail?id=11YgzN3SMcnLR6wq1BtE6Jy4oSZ7jolqn&sz=w800': '/assets/images/umezu.png',
+              'https://drive.google.com/uc?export=download&id=1oyVXtJhZpD7U5-i200PTSnlfYSyFuSc3': '/assets/audio/ogawa.mp3',
+              'https://drive.google.com/uc?export=download&id=1dSfbKqzWQzcxAEpn1VRRfkqXRFGt0ple': '/assets/audio/ohira.mp3',
+              'https://drive.google.com/uc?export=download&id=1eH5qzX7w1yLIi3b9VNhGnsVUfN4oEtw_': '/assets/audio/sakura.mp3',
+              'https://drive.google.com/uc?export=download&id=1OZLrnIJhlwSyF4AvLJhXL3HgGIx_6qeL': '/assets/audio/kizashi.mp3',
+              'https://drive.google.com/uc?export=download&id=1swZiaDxkJk6jAFtLLfowAjgabxAKbSK-': '/assets/audio/morita.mp3',
+              'https://drive.google.com/uc?export=download&id=14FKZeXZLNac_LEd_dKkt9gmDzGffQRg6': '/assets/audio/keiko.mp3',
+              'https://drive.google.com/uc?export=download&id=1oaf3BcRLiVnMmuiTzcsTs-YKKS_GNS55': '/assets/audio/yohira.mp3',
+          }
+          changed = 0
+          for old, new in replacements.items():
+              if old in s:
+                  s = s.replace(old, new)
+                  changed += 1
+          if changed != len(replacements):
+              raise SystemExit(f'Expected {len(replacements)} replacements, made {changed}')
+          p.write_text(s, encoding='utf-8')
+          print(f'Replaced {changed} Drive asset URLs in LP001')
+          PY
+
+      - name: Commit assets and LP references
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/images
+          git add assets/images assets/audio lp001/index.html
           if git diff --cached --quiet; then
-            echo 'No image changes.'
+            echo 'No asset changes.'
           else
-            git commit -m 'Sync LP public images'
+            git commit -m 'Publish LP001 image and audio assets on GitHub Pages'
             git push
           fi
