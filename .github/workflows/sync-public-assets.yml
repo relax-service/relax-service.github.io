@@ -1,0 +1,64 @@
+name: Sync public LP assets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/sync-public-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download public images and audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/images assets/audio
+
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1X0NUhyoebHUpaM3rLx0Z8PjCCqkPOoEi&sz=w800' -o assets/images/ogawa.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1-Io23UaTP6d_7ujE0H73EgMOYp4bs--p&sz=w800' -o assets/images/ohira.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=10V6-_cvkPYs3r1_zdYWt2CDl8SAwLKx9&sz=w800' -o assets/images/sakura.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1QGPWfeifL8Z2EI1iDiP7V2masK4SGYiR&sz=w800' -o assets/images/kizashi.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1E7BPgtj7qBE3hA2DMV_Er9LML3BBMf0I&sz=w800' -o assets/images/morita.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1lzgLdANdXtDxieMI8C-UElqENgzi6ghC&sz=w800' -o assets/images/keiko.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=1JvXq3HSVb2DRElRB8hc-14FcD_Yy53AG&sz=w800' -o assets/images/yohira.jpg
+          curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=11YgzN3SMcnLR6wq1BtE6Jy4oSZ7jolqn&sz=w800' -o assets/images/umezu.jpg
+          curl -L --fail --retry 3 'https://www.relax-s.com/images/logo.jpg' -o assets/images/logo.jpg
+
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1oyVXtJhZpD7U5-i200PTSnlfYSyFuSc3' -o assets/audio/ogawa.mp3
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1dSfbKqzWQzcxAEpn1VRRfkqXRFGt0ple' -o assets/audio/ohira.mp3
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1eH5qzX7w1yLIi3b9VNhGnsVUfN4oEtw_' -o assets/audio/sakura.mp3
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1OZLrnIJhlwSyF4AvLJhXL3HgGIx_6qeL' -o assets/audio/kizashi.mp3
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1swZiaDxkJk6jAFtLLfowAjgabxAKbSK-' -o assets/audio/morita.mp3
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=14FKZeXZLNac_LEd_dKkt9gmDzGffQRg6' -o assets/audio/keiko.mp3
+          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1oaf3BcRLiVnMmuiTzcsTs-YKKS_GNS55' -o assets/audio/yohira.mp3
+
+          echo 'Downloaded assets:'
+          find assets -type f -maxdepth 2 -print -exec file {} \;
+
+          # Guard against accidentally saving a Google HTML error/login page.
+          if grep -Il '<html\|<!doctype' assets/images/* assets/audio/* 2>/dev/null | grep -q .; then
+            echo 'ERROR: one or more downloaded assets are HTML rather than media files.' >&2
+            exit 1
+          fi
+
+      - name: Commit assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/images assets/audio
+          if git diff --cached --quiet; then
+            echo 'No asset changes.'
+          else
+            git commit -m 'Sync LP public image and audio assets'
+            git push
+          fi
