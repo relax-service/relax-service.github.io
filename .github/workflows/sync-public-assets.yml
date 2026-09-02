@@ -32,13 +32,13 @@ jobs:
           curl -L --fail --retry 3 'https://drive.google.com/thumbnail?id=11YgzN3SMcnLR6wq1BtE6Jy4oSZ7jolqn&sz=w800' -o assets/images/umezu.jpg
           curl -L --fail --retry 3 'https://www.relax-s.com/images/logo.jpg' -o assets/images/logo.jpg
 
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1oyVXtJhZpD7U5-i200PTSnlfYSyFuSc3' -o assets/audio/ogawa.mp3
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1dSfbKqzWQzcxAEpn1VRRfkqXRFGt0ple' -o assets/audio/ohira.mp3
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1eH5qzX7w1yLIi3b9VNhGnsVUfN4oEtw_' -o assets/audio/sakura.mp3
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1OZLrnIJhlwSyF4AvLJhXL3HgGIx_6qeL' -o assets/audio/kizashi.mp3
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1swZiaDxkJk6jAFtLLfowAjgabxAKbSK-' -o assets/audio/morita.mp3
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=14FKZeXZLNac_LEd_dKkt9gmDzGffQRg6' -o assets/audio/keiko.mp3
-          curl -L --fail --retry 3 'https://drive.google.com/uc?export=download&id=1oaf3BcRLiVnMmuiTzcsTs-YKKS_GNS55' -o assets/audio/yohira.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=1oyVXtJhZpD7U5-i200PTSnlfYSyFuSc3&confirm=t' -o assets/audio/ogawa.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=1dSfbKqzWQzcxAEpn1VRRfkqXRFGt0ple&confirm=t' -o assets/audio/ohira.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=1eH5qzX7w1yLIi3b9VNhGnsVUfN4oEtw_&confirm=t' -o assets/audio/sakura.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=1OZLrnIJhlwSyF4AvLJhXL3HgGIx_6qeL&confirm=t' -o assets/audio/kizashi.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=1swZiaDxkJk6jAFtLLfowAjgabxAKbSK-&confirm=t' -o assets/audio/morita.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=14FKZeXZLNac_LEd_dKkt9gmDzGffQRg6&confirm=t' -o assets/audio/keiko.mp3
+          curl -L --fail --retry 3 'https://drive.usercontent.google.com/download?export=download&id=1oaf3BcRLiVnMmuiTzcsTs-YKKS_GNS55&confirm=t' -o assets/audio/yohira.mp3
 
           echo 'Downloaded assets:'
           find assets -type f -maxdepth 2 -print -exec file {} \;
