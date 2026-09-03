@@ -1,6 +1,8 @@
 (function(){
   const STATUS_URL = 'https://script.google.com/macros/s/AKfycbyl5jrBh-O9Zp2eiqddhQykp21fiEDpZBrxJ89byy57cCQq5nsPMZN3yl5K3QdPMjrt3g/exec?action=status';
   const consultantNo = '0000-3';
+  let lastStatusData = null;
+  let realtimeExpiryTimer = null;
 
   const CUSTOMER_VOICES = {
     '0020': '自然と打ち解けて、昔からの友達みたいに緊張せず楽しく話せました。たくさん話しても、ちゃんと聞いてくれているのがわかりました。',
@@ -33,19 +35,12 @@
     if(end && !Number.isNaN(end.getTime())) return end.getTime()>now.getTime();
     const st=slotStart(slot);
     if(st && !Number.isNaN(st.getTime())) return st.getTime()>=now.getTime();
-    return true;
+    return false;
   }
   function isWithin7Days(slot, now){
     const st=slotStart(slot);
-    if(!st || Number.isNaN(st.getTime())) return true;
+    if(!st || Number.isNaN(st.getTime())) return false;
     return st.getTime() <= now.getTime() + 7*24*60*60*1000;
-  }
-
-  function applyPublicCopyFixes(){
-    const keiko=document.querySelector('.person[data-counselor-id="0124"] .one-line');
-    if(keiko){
-      keiko.textContent=keiko.textContent.replace(/（サ）\s*$/,'').trim();
-    }
   }
 
   function renderCustomerVoices(){
@@ -96,8 +91,16 @@
     const rawSlots=Array.isArray(data.week_slots) ? data.week_slots : [];
     const slots=rawSlots.filter(slot=>isFutureOrCurrentSlot(slot,now) && isWithin7Days(slot,now));
 
-    let next=(data.next_slot && isFutureOrCurrentSlot(data.next_slot,now)) ? data.next_slot : null;
+    let next=(data.next_slot && isFutureOrCurrentSlot(data.next_slot,now) && isWithin7Days(data.next_slot,now)) ? data.next_slot : null;
     if(!next && slots.length) next=slots[0];
+
+    if(realtimeExpiryTimer){
+      clearTimeout(realtimeExpiryTimer);
+      realtimeExpiryTimer=null;
+    }
+    if(online && rawUntil && !Number.isNaN(rawUntil.getTime())){
+      realtimeExpiryTimer=setTimeout(()=>render(data),Math.max(0,rawUntil.getTime()-now.getTime())+250);
+    }
 
     box.classList.toggle('is-online', online);
     if(online){
@@ -145,17 +148,36 @@
     });
   }
 
+  function enforceSingleAudioPlayback(){
+    const audios=[...document.querySelectorAll('audio')];
+    audios.forEach(audio=>{
+      audio.addEventListener('play',()=>{
+        audios.forEach(other=>{
+          if(other!==audio && !other.paused) other.pause();
+        });
+      });
+    });
+  }
+
   async function refresh(){
     try{
       const data=await jsonpStatus();
+      lastStatusData=data;
       render(data);
     }catch(e){
+      if(lastStatusData) render(lastStatusData);
       console.warn('Realtime status load failed',e);
     }
   }
 
-  applyPublicCopyFixes();
   renderCustomerVoices();
+  enforceSingleAudioPlayback();
   refresh();
   setInterval(refresh,60000);
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){
+      if(lastStatusData) render(lastStatusData);
+      refresh();
+    }
+  });
 })();
