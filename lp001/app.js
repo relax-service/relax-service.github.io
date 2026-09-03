@@ -65,7 +65,7 @@
       const text=document.createElement('p');
       text.className='customer-voice-quote';
       text.style.cssText='font-family:"Noto Serif JP",serif;font-size:14px;line-height:1.78;color:#403A3D;margin:0';
-      text.textContent=`「${quote}」`;
+      text.textContent=quote;
 
       block.append(label,text);
 
