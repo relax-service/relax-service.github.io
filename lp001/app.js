@@ -3,6 +3,18 @@
   const consultantNo = '0000-3';
   let lastStatusData = null;
   let realtimeExpiryTimer = null;
+  const baseCardOrder = [...document.querySelectorAll('.counselors .person')];
+
+  function prioritizeRealtimeCard(online){
+    const container=document.querySelector('.counselors');
+    const realtimeCard=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
+    if(!container || !realtimeCard) return;
+    if(online){
+      if(container.firstElementChild!==realtimeCard) container.prepend(realtimeCard);
+      return;
+    }
+    baseCardOrder.forEach(card=>container.appendChild(card));
+  }
 
   const CUSTOMER_VOICES = {
     '0020': '自然と打ち解けて、昔からの友達みたいに緊張せず楽しく話せました。たくさん話しても、ちゃんと聞いてくれているのがわかりました。',
@@ -88,6 +100,7 @@
     const now=new Date();
     const rawUntil=parseIso(data.realtime_until || data.until);
     const online=!!data.online && (!rawUntil || Number.isNaN(rawUntil.getTime()) || rawUntil.getTime()>now.getTime());
+    prioritizeRealtimeCard(online);
     const rawSlots=Array.isArray(data.week_slots) ? data.week_slots : [];
     const slots=rawSlots.filter(slot=>isFutureOrCurrentSlot(slot,now) && isWithin7Days(slot,now));
 
