@@ -1,9 +1,27 @@
 (function(){
-  const STATUS_URL = 'https://script.google.com/macros/s/AKfycbyl5jrBh-O9Zp2eiqddhQykp21fiEDpZBrxJ89byy57cCQq5nsPMZN3yl5K3QdPMjrt3g/exec?action=status';
-  const consultantNo = '0000-3';
+  const config = window.LP_CONFIG || {};
+  const realtimeConfig = config.realtime || {};
+  const STATUS_URL = realtimeConfig.statusUrl || '';
+  const consultantNo = realtimeConfig.consultantNo || '0000-3';
+  const timezone = realtimeConfig.timezone || 'Asia/Tokyo';
+  const scheduleDays = Number(realtimeConfig.days) || 7;
   let lastStatusData = null;
   let realtimeExpiryTimer = null;
   const baseCardOrder = [...document.querySelectorAll('.counselors .person')];
+
+  function readConfigPath(path){
+    return path.split('.').reduce((value,key)=>value && value[key],config);
+  }
+
+  function applyLpConfig(){
+    if(config.pageTitle) document.title=config.pageTitle;
+    const description=document.querySelector('meta[name="description"]');
+    if(description && config.pageDescription) description.content=config.pageDescription;
+    document.querySelectorAll('[data-lp-key]').forEach(node=>{
+      const value=readConfigPath(node.dataset.lpKey);
+      if(typeof value==='string') node.textContent=value;
+    });
+  }
 
   function setupCounselorDisclosure(){
     const container=document.querySelector('.counselors');
@@ -60,17 +78,19 @@
 
   function $(id){ return document.getElementById(id); }
   function parseIso(value){ return value ? new Date(value) : null; }
-  function pad(n){ return String(n).padStart(2,'0'); }
   function fmtDateTime(value){
     const d = parseIso(value);
     if(!d || Number.isNaN(d.getTime())) return '';
-    const w=['日','月','火','水','木','金','土'][d.getDay()];
-    return `${d.getMonth()+1}/${d.getDate()}（${w}） ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return new Intl.DateTimeFormat('ja-JP',{
+      timeZone:timezone,month:'numeric',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false
+    }).format(d).replace(/\s/g,' ');
   }
   function fmtTime(value){
     const d = parseIso(value);
     if(!d || Number.isNaN(d.getTime())) return '';
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return new Intl.DateTimeFormat('ja-JP',{
+      timeZone:timezone,hour:'2-digit',minute:'2-digit',hour12:false
+    }).format(d);
   }
   function slotStart(slot){ return parseIso(slot && slot.start); }
   function slotEnd(slot){ return parseIso(slot && (slot.end || slot.until)); }
@@ -84,7 +104,28 @@
   function isWithin7Days(slot, now){
     const st=slotStart(slot);
     if(!st || Number.isNaN(st.getTime())) return false;
-    return st.getTime() <= now.getTime() + 7*24*60*60*1000;
+    return st.getTime() <= now.getTime() + scheduleDays*24*60*60*1000;
+  }
+
+  function renderFailure(){
+    const box=$('realtime-status-0000-3');
+    const label=$('realtime-label-0000-3');
+    const time=$('realtime-time-0000-3');
+    const week=$('realtime-week-0000-3');
+    if(!box||!label||!time||!week) return;
+    prioritizeRealtimeCard(false);
+    box.classList.remove('is-online');
+    label.textContent='待機予定';
+    time.textContent='待機予定を取得できません。再読み込みしてください';
+    week.innerHTML='';
+    const li=document.createElement('li');
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='schedule-retry';
+    button.textContent='待機予定を再読み込み';
+    button.addEventListener('click',refresh,{once:true});
+    li.appendChild(button);
+    week.appendChild(li);
   }
 
   function renderCustomerVoices(){
@@ -205,16 +246,22 @@
   }
 
   async function refresh(){
+    if(!STATUS_URL){
+      renderFailure();
+      return;
+    }
     try{
       const data=await jsonpStatus();
       lastStatusData=data;
       render(data);
     }catch(e){
       if(lastStatusData) render(lastStatusData);
+      else renderFailure();
       console.warn('Realtime status load failed',e);
     }
   }
 
+  applyLpConfig();
   setupCounselorDisclosure();
   linkStaticSchedules();
   renderCustomerVoices();
