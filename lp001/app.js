@@ -5,6 +5,24 @@
   let realtimeExpiryTimer = null;
   const baseCardOrder = [...document.querySelectorAll('.counselors .person')];
 
+  function setupCounselorDisclosure(){
+    const container=document.querySelector('.counselors');
+    if(!container || baseCardOrder.length<=3) return;
+    document.documentElement.classList.add('js');
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='more-counselors-toggle';
+    button.setAttribute('aria-expanded','false');
+    button.textContent=`ほかの相談員も見る（${baseCardOrder.length-3}人）`;
+    button.addEventListener('click',()=>{
+      const expanded=container.classList.toggle('is-expanded');
+      button.setAttribute('aria-expanded',String(expanded));
+      button.textContent=expanded ? '表示を少なくする' : `ほかの相談員も見る（${baseCardOrder.length-3}人）`;
+      if(!expanded) document.getElementById('people')?.scrollIntoView({block:'start'});
+    });
+    container.insertAdjacentElement('afterend',button);
+  }
+
   function prioritizeRealtimeCard(online){
     const container=document.querySelector('.counselors');
     const realtimeCard=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
@@ -183,6 +201,7 @@
     }
   }
 
+  setupCounselorDisclosure();
   renderCustomerVoices();
   enforceSingleAudioPlayback();
   refresh();
