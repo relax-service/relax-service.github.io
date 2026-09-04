@@ -154,3 +154,44 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
   .service-choice:last-child{border-right:0}
 }
 
+/* LP001: mobile-readable eight-panel story */
+.story-intro{margin:-6px 0 22px;color:var(--muted);font-size:15px;line-height:1.8}
+.manga-stack{display:grid;gap:18px}
+.manga-panel{overflow:hidden;border:1px solid var(--line-strong);border-radius:var(--radius);background:#fff}
+.manga-scene{position:relative;overflow:hidden;background:#F6EFE9;border-bottom:1px solid var(--line)}
+.manga-scene img{position:absolute;left:-27.27%;top:0;width:130.91%;max-width:none;height:auto;display:block}
+.manga-scene-1{aspect-ratio:660/181}.manga-scene-1 img{transform:translateY(-12.57%)}
+.manga-scene-2{aspect-ratio:660/173}.manga-scene-2 img{transform:translateY(-24.61%)}
+.manga-scene-3{aspect-ratio:660/159}.manga-scene-3 img{transform:translateY(-36.26%)}
+.manga-scene-4{aspect-ratio:660/160}.manga-scene-4 img{transform:translateY(-47.01%)}
+.manga-scene-5{aspect-ratio:660/153}.manga-scene-5 img{transform:translateY(-57.81%)}
+.manga-scene-6{aspect-ratio:660/141}.manga-scene-6 img{transform:translateY(-68.23%)}
+.manga-scene-7{aspect-ratio:660/139}.manga-scene-7 img{transform:translateY(-77.86%)}
+.manga-scene-8{aspect-ratio:660/140}.manga-scene-8 img{transform:translateY(-87.30%)}
+.manga-copy{display:grid;grid-template-columns:38px 1fr;gap:10px;padding:15px 16px 17px;align-items:start}
+.manga-copy>span{font-family:"Noto Serif JP",serif;color:var(--brand-primary);font-size:14px;font-weight:600;letter-spacing:.08em;padding-top:2px}
+.manga-copy p{font-size:15px;line-height:1.75;margin:0;color:#514B4F}
+.manga-copy b{display:block;font-family:"Noto Serif JP",serif;font-size:17px;line-height:1.7;color:var(--text);margin-bottom:3px}
+
+/* LP001: choice and pre-purchase clarity */
+.choice-heading{min-height:54px;padding:13px 16px;display:flex;align-items:center;font-size:15px;font-weight:700}
+.first-use-box,.safety-box{margin-top:24px;padding:17px 18px;border:1px solid var(--line);border-radius:var(--radius-small);background:#fff}
+.first-use-box h3,.safety-box h3{font-size:18px;margin:0 0 8px}
+.first-use-box ol{margin:10px 0 8px;padding-left:1.4em;font-size:14px;line-height:1.85}
+.first-use-box p,.safety-box p{font-size:13px;line-height:1.75;color:#5B5659;margin:0}
+.safety-box p+p{margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+.selection-note{margin:20px 0 16px;padding:13px 14px;border-left:3px solid var(--brand-primary);background:#fff;font-size:14px;line-height:1.7}
+.selection-note b,.selection-note span{display:block}
+.selection-note span{color:var(--muted);margin-top:2px}
+.js .counselors:not(.is-expanded) .person:nth-child(n+4){display:none}
+.more-counselors-toggle{display:block;width:100%;min-height:50px;margin-top:14px;padding:11px 16px;border:1px solid rgba(235,107,164,.55);border-radius:8px;background:#fff;color:#A64E76;font:700 14px/1.4 "Noto Sans JP",system-ui,-apple-system,sans-serif;cursor:pointer}
+.more-counselors-toggle:focus-visible{outline:2px solid rgba(235,107,164,.35);outline-offset:2px}
+@media(max-width:480px){
+  section{padding:50px 0}
+  .pad{padding-left:18px;padding-right:18px}
+  .manga-stack{gap:15px}
+  .manga-copy{grid-template-columns:32px 1fr;padding:13px 13px 15px}
+  .manga-copy p{font-size:14px}
+  .manga-copy b{font-size:16px}
+}
+
