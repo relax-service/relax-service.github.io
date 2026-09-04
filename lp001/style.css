@@ -117,3 +117,40 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
 .voice-native-label{margin:0 0 6px !important;text-align:left !important}
 .voice-native-audio{display:block !important;margin:0 !important;width:220px !important;max-width:100% !important;height:34px !important}
 @media(max-width:480px){.voice-native-label{font-size:13px}.voice-native-audio{width:220px !important;max-width:82vw !important;height:34px !important}}
+
+/* LP001 service-primer */
+.service-primer{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.service-definition{font-family:"Noto Serif JP",serif;font-size:18px;line-height:1.9;margin:0;color:#423D40}
+.benefit-grid{display:grid;gap:10px;margin:24px 0}
+.benefit-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-small);padding:17px 18px}
+.benefit-label{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--brand-primary);margin-bottom:5px}
+.benefit-card h3{font-size:18px;margin:0 0 6px}
+.benefit-card p{font-size:14px;line-height:1.75;color:#5B5659;margin:0}
+.use-steps{margin-top:30px}
+.use-steps h3{font-size:18px;margin-bottom:11px}
+.use-steps ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-strong)}
+.use-step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
+.step-number{width:28px;height:28px;border:1px solid rgba(235,107,164,.55);border-radius:50%;display:grid;place-items:center;color:#A64E76;font-size:13px;font-weight:700;line-height:1}
+.use-step b{display:block;font-size:15px;margin-bottom:3px}
+.use-step p{font-size:14px;line-height:1.7;color:#5B5659;margin:0}
+.choice-guide{margin-top:24px;border:1px solid var(--line-strong);border-radius:var(--radius-small);background:#fff}
+.choice-guide summary{min-height:54px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;font-size:15px;font-weight:700;list-style:none}
+.choice-guide summary::-webkit-details-marker{display:none}
+.choice-toggle{color:var(--brand-primary);font-size:22px;font-weight:400;line-height:1;transition:transform .15s ease}
+.choice-guide[open] .choice-toggle{transform:rotate(45deg)}
+.choice-grid{display:grid;gap:0;border-top:1px solid var(--line)}
+.service-choice{padding:16px;border-bottom:1px solid var(--line)}
+.service-choice:last-child{border-bottom:0}
+.service-choice b{display:block;font-family:"Noto Serif JP",serif;font-size:17px;margin-bottom:4px}
+.service-choice p{font-size:14px;line-height:1.72;color:#575256;margin:0 0 8px}
+.service-route{font-size:12px;font-weight:700;color:#7B7075}
+.fortune-link{display:inline-block;margin-top:4px;color:#9B486D;font-size:13px;font-weight:700;text-underline-offset:3px}
+.test-notice{margin-top:24px;padding:13px 14px;border-left:3px solid #C78C31;background:#FFFBF2;color:#5E4B2C;font-size:13px;line-height:1.7}
+.test-notice b,.test-notice span{display:block}
+@media(min-width:700px){
+  .benefit-grid{grid-template-columns:1fr 1fr}
+  .choice-grid{grid-template-columns:repeat(3,1fr)}
+  .service-choice{border-bottom:0;border-right:1px solid var(--line)}
+  .service-choice:last-child{border-right:0}
+}
+
