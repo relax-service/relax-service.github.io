@@ -23,6 +23,20 @@
     container.insertAdjacentElement('afterend',button);
   }
 
+  function linkStaticSchedules(){
+    baseCardOrder.forEach(card=>{
+      if(card.dataset.counselorId===consultantNo) return;
+      const scheduleText=card.querySelector('.schedule .muted');
+      const profileLink=card.querySelector('.profile-link');
+      if(!scheduleText || !profileLink || scheduleText.textContent.trim()!=='日程調整中') return;
+      const link=document.createElement('a');
+      link.className='schedule-link';
+      link.href=profileLink.href;
+      link.textContent='待機予定を確認する';
+      scheduleText.replaceWith(link);
+    });
+  }
+
   function prioritizeRealtimeCard(online){
     const container=document.querySelector('.counselors');
     const realtimeCard=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
@@ -202,6 +216,7 @@
   }
 
   setupCounselorDisclosure();
+  linkStaticSchedules();
   renderCustomerVoices();
   enforceSingleAudioPlayback();
   refresh();
