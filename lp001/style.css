@@ -194,4 +194,5 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
   .manga-copy p{font-size:14px}
   .manga-copy b{font-size:16px}
 }
-
+.schedule-retry{appearance:none;border:1px solid #c95f8c;background:#fff;color:#9b486d;border-radius:6px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer}
+.schedule-retry:focus-visible{outline:3px solid rgba(235,107,164,.25);outline-offset:2px}
