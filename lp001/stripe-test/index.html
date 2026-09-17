@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Stripe購入導線テスト｜リラックスサービス</title>
+<style>
+:root{--pink:#eb6ba4;--ink:#2b292b;--muted:#6f686c;--line:#eadfe4;--soft:#fff8fb}
+*{box-sizing:border-box}body{margin:0;background:#faf7f8;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;line-height:1.75}.wrap{max-width:640px;margin:0 auto;background:#fff;min-height:100vh;padding:28px 20px 56px}.brand{font-weight:700;color:var(--pink);font-size:15px}.badge{display:inline-block;margin:18px 0 8px;padding:4px 9px;border-radius:999px;background:#fff3f8;color:#9c456d;font-size:12px;font-weight:700}.title{font-size:28px;line-height:1.45;margin:8px 0 10px}.lead{color:var(--muted);font-size:15px}.card{margin-top:26px;border:1px solid var(--line);border-radius:14px;padding:20px;background:#fff}.name{font-size:22px;font-weight:700}.meta{color:var(--muted);font-size:14px;margin-top:3px}.notice{margin-top:16px;background:var(--soft);border-left:4px solid var(--pink);padding:13px 14px;font-size:14px}.tickets{display:grid;gap:12px;margin-top:20px}.ticket{display:block;text-decoration:none;border:1px solid var(--pink);border-radius:12px;padding:15px 16px;color:var(--ink);background:#fff}.ticket strong{display:block;color:#9c456d;font-size:18px}.ticket span{display:block;font-size:14px;margin-top:3px;color:var(--muted)}.ticket.primary{background:var(--pink);color:#fff}.ticket.primary strong,.ticket.primary span{color:#fff}.help{margin-top:24px;font-size:13px;color:var(--muted)}.steps{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}.steps h2{font-size:18px;margin:0 0 10px}.steps ol{margin:0;padding-left:1.4em}.steps li{margin:8px 0}.test{margin-top:28px;padding:12px 14px;background:#fff9e8;border:1px solid #f0dfaa;border-radius:10px;font-size:13px;color:#5c4d27}
+</style>
+</head>
+<body><main class="wrap">
+<div class="brand">リラックスサービス</div>
+<div class="badge">サンドボックス検証用</div>
+<h1 class="title">購入したい時間を選ぶだけ。</h1>
+<p class="lead">美月LPの本番購入導線を想定した、梅津相談員のStripeテストです。相談員を選び直す必要はありません。</p>
+<section class="card">
+<div class="name">梅津相談員</div>
+<div class="meta">話し相手｜100円／分｜チケット有効期限6か月</div>
+<div class="notice"><b>決済後に電話番号が表示されます。</b><br>請求書・領収書もその場で確認できます。</div>
+<div class="tickets">
+<a class="ticket primary" href="https://buy.stripe.com/test_bJe14p7JBdh82oj8xOgQE0g"><strong>30分　3,000円</strong><span>初回割引の対象時間</span></a>
+<a class="ticket" href="https://buy.stripe.com/test_28E3cx1ldgtkd2X5lCgQE0h"><strong>60分　6,000円</strong><span>通常チケット</span></a>
+<a class="ticket" href="https://buy.stripe.com/test_28EeVfaVNa4W6Ez3dugQE0i"><strong>90分　9,000円</strong><span>通常チケット</span></a>
+</div>
+<p class="help">※相談員の電話番号はこのページには表示していません。支払い成功後のStripe画面でのみ案内します。</p>
+</section>
+<section class="steps"><h2>今回の確認ポイント</h2><ol><li>時間を迷わず選べる</li><li>Stripeで氏名・メール・電話番号を入力して決済できる</li><li>決済後に梅津相談員の電話番号が表示される</li><li>請求書・領収書PDFを1タップで開ける</li></ol></section>
+<div class="test"><b>テスト環境です。</b> 実際の請求は発生しません。カード決済テストは 4242 4242 4242 4242 を使用してください。</div>
+</main></body></html>
