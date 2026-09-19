@@ -63,6 +63,7 @@
   const parentOrigin=document.getElementById('gate-parent-origin');
   const submit=document.getElementById('initial-submit');
   const status=document.getElementById('initial-status');
+  const debugMode=new URLSearchParams(window.location.search).get('debug')==='1';
   let timer=null;
   let startedAt=0;
 
@@ -110,9 +111,26 @@
     if(data.source!=='relax-stripe-gas')return;
     clearTimeout(timer);
     if(data.ok&&typeof data.checkoutUrl==='string'&&data.checkoutUrl.indexOf('https://checkout.stripe.com/')===0){
-      const sec=startedAt?((performance.now()-startedAt)/1000).toFixed(1):'';
-      status.textContent='Stripeへ移動します…'+(sec?'（'+sec+'秒）':'');
-      window.location.assign(data.checkoutUrl);
+      const totalSec=startedAt?((performance.now()-startedAt)/1000):0;
+      const timing=data.timing||{};
+      const gasSec=Number(timing.total_ms||0)/1000;
+      if(debugMode){
+        const parts=[
+          'GAS内 '+(gasSec?gasSec.toFixed(2):'?')+'秒',
+          'ブラウザ合計 '+(totalSec?totalSec.toFixed(2):'?')+'秒'
+        ];
+        if(timing.counselor_ms!=null) parts.push('相談員読込 '+(Number(timing.counselor_ms)/1000).toFixed(2)+'秒');
+        if(timing.ticket_ms!=null) parts.push('チケット読込 '+((Number(timing.ticket_ms)-Number(timing.counselor_ms||0))/1000).toFixed(2)+'秒');
+        if(timing.orders_ms!=null) parts.push('注文読込 '+((Number(timing.orders_ms)-Number(timing.lock_ms||0))/1000).toFixed(2)+'秒');
+        if(timing.stripe_create_ms!=null) parts.push('Stripe作成 '+((Number(timing.stripe_create_ms)-Number(timing.orders_ms||0))/1000).toFixed(2)+'秒');
+        status.textContent=parts.join(' / ');
+        submit.disabled=false;
+        submit.innerHTML='<strong>計測完了</strong><span>3秒後にStripeへ移動します</span>';
+        setTimeout(function(){window.location.assign(data.checkoutUrl);},3000);
+      }else{
+        status.textContent='Stripeへ移動します…'+(totalSec?'（'+totalSec.toFixed(1)+'秒）':'');
+        window.location.assign(data.checkoutUrl);
+      }
       return;
     }
     submit.disabled=false;
