@@ -13,9 +13,16 @@
 <style>
 .purchase-block{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
 .purchase-label{font-size:14px;font-weight:700;line-height:1.5;color:var(--text)}
-.first-ticket-cta{margin-top:10px!important;min-height:60px;flex-direction:column;gap:1px;text-align:center;line-height:1.35}
-.first-ticket-cta small{font-size:13px;font-weight:700;opacity:.96}
+.first-ticket-form{margin-top:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff8fb}
+.first-ticket-form label{display:block;font-size:13px;font-weight:700;line-height:1.5;color:var(--text)}
+.first-ticket-form input{width:100%;margin-top:7px;padding:13px 14px;border:1px solid #d9cdd3;border-radius:10px;background:#fff;font-size:18px;box-sizing:border-box}
+.first-ticket-submit{margin-top:10px!important;min-height:60px;width:100%;border:0;cursor:pointer;flex-direction:column;gap:1px;text-align:center;line-height:1.35}
+.first-ticket-submit span{display:block}
+.first-ticket-submit small{font-size:13px;font-weight:700;opacity:.96}
+.first-ticket-submit:disabled{opacity:.65;cursor:wait}
 .first-ticket-note{margin:8px 0 0;font-size:12px;line-height:1.65;color:var(--muted)}
+.first-ticket-status{min-height:1.6em;margin:8px 0 0;font-size:12px;line-height:1.5;font-weight:700;color:#9c456d}
+.gate-frame{position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
 .purchase-divider{display:flex;align-items:center;gap:10px;margin:14px 0 8px;color:var(--muted);font-size:12px;font-weight:600}
 .purchase-divider:before,.purchase-divider:after{content:"";height:1px;background:var(--line);flex:1}
 .ticket-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:0}
@@ -65,7 +72,7 @@
 </div>
 <div class="use-steps"><h3>利用は3ステップ</h3><ol>
 <li class="use-step"><span class="step-number">1</span><div><b>話す人と時間を選ぶ</b><p>30分・60分・90分から、その場で選びます。</p></div></li>
-<li class="use-step"><span class="step-number">2</span><div><b>Stripeで購入</b><p>氏名・メールアドレス・電話番号を入力して決済します。</p></div></li>
+<li class="use-step"><span class="step-number">2</span><div><b>Stripeで購入</b><p>初回30分は電話番号で対象確認後、Stripeへ進みます。決済画面では氏名入力は不要です。</p></div></li>
 <li class="use-step"><span class="step-number">3</span><div><b>表示された電話番号へ発信</b><p>決済完了画面に相談員の電話番号と、請求書・領収書のボタンが表示されます。</p></div></li>
 </ol></div>
 <div class="safety-box"><h3>購入後も確認できます</h3><p><b>決済完了後、相談員の電話番号を表示します。</b>その場で請求書・領収書PDFも開けます。チケットは購入日から6か月有効です。</p></div>
@@ -88,8 +95,13 @@
 <article class="person" data-counselor-id="0000-3"><div class="person-top"><div class="avatar"><img alt="梅津 靖裕" src="/assets/images/umezu.png"/></div><div><div class="person-name">梅津 靖裕</div><div class="meta">50代男性｜話し相手</div></div></div><p class="one-line">どんなことでもお気軽にお電話ください。いつでもお待ちしています。</p><div class="tags"><span class="tag">人間関係</span><span class="tag">仕事</span><span class="tag">悩み全般</span></div><div class="schedule" id="realtime-schedule-0000-3"><div aria-live="polite" class="realtime-status" id="realtime-status-0000-3"><div class="realtime-status-label" id="realtime-label-0000-3">待機予定</div><div class="realtime-status-time" id="realtime-time-0000-3">待機予定を読み込み中…</div></div><div class="schedule-head"><b>今後1週間の予定</b></div><ul class="schedule-list" id="realtime-week-0000-3"><li>待機予定を読み込み中…</li></ul></div>
 <div class="purchase-block">
 <div class="purchase-label">ご利用時間を選ぶ</div>
-<a class="cta first-ticket-cta" href="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec?action=promo&consultant_no=0000-3&lp_id=LP001"><span>初回30分</span><small>1,000円</small></a>
-<p class="first-ticket-note">同じ相談員をStripeで初めて利用する方は1回対象です。STORESで初回割引をご利用済みでも、Stripeではもう一度ご利用いただけます。割引コードの入力は不要です。</p>
+<form class="first-ticket-form" id="initial-ticket-form" novalidate>
+<label for="initial-phone">初回30分をご利用の方</label>
+<input id="initial-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09012345678" aria-describedby="initial-note initial-status" required>
+<button class="cta first-ticket-submit" id="initial-submit" type="submit"><span>初回30分</span><small>1,000円</small></button>
+<p class="first-ticket-note" id="initial-note">この相談員をStripeで初めて購入する方が対象です。電話番号で確認後、そのままStripeへ進みます。STORESで初回割引をご利用済みでも、Stripe移行後は相談員ごとに1回ご利用いただけます。</p>
+<p class="first-ticket-status" id="initial-status" aria-live="polite"></p>
+</form>
 <div class="purchase-divider"><span>通常料金</span></div>
 <div class="ticket-options" aria-label="梅津相談員の通常購入時間">
 <a class="cta" href="https://buy.stripe.com/test_bJe14p7JBdh82oj8xOgQE0g?client_reference_id=0000-3_LP001"><span>30分</span><small>3,000円</small></a>
@@ -105,7 +117,81 @@
 </main>
 <footer class="footer">© Relax Service / An Funny Project LLC</footer>
 </div>
+<iframe class="gate-frame" id="stripe-gate-frame" name="stripe-gate-frame" title="初回購入確認"></iframe>
+<form id="stripe-gate-post" action="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec" method="post" target="stripe-gate-frame" hidden>
+<input type="hidden" name="action" value="promo">
+<input type="hidden" name="embed" value="1">
+<input type="hidden" name="consultant_no" value="0000-3">
+<input type="hidden" name="lp_id" value="LP001">
+<input type="hidden" name="phone" id="gate-phone" value="">
+<input type="hidden" name="parent_origin" id="gate-parent-origin" value="">
+</form>
 <script src="/lp001/lp-config.js?v=20260919a" defer></script>
 <script src="/lp001/app.js?v=20260919a" defer></script>
+<script>
+(function(){
+  const uiForm=document.getElementById('initial-ticket-form');
+  const postForm=document.getElementById('stripe-gate-post');
+  const phone=document.getElementById('initial-phone');
+  const hiddenPhone=document.getElementById('gate-phone');
+  const parentOrigin=document.getElementById('gate-parent-origin');
+  const submit=document.getElementById('initial-submit');
+  const status=document.getElementById('initial-status');
+  let timer=null;
+
+  function normalizePhone(v){
+    let d=String(v||'').replace(/\D/g,'');
+    if(d.indexOf('81')===0&&d.length>=11)d='0'+d.slice(2);
+    return /^0\d{9,10}$/.test(d)?d:'';
+  }
+
+  function trustedOrigin(origin){
+    try{
+      const u=new URL(origin);
+      return u.protocol==='https:'&&(
+        u.hostname==='script.google.com'||
+        u.hostname==='script.googleusercontent.com'||
+        u.hostname.endsWith('.googleusercontent.com')
+      );
+    }catch(_){return false}
+  }
+
+  uiForm.addEventListener('submit',function(e){
+    e.preventDefault();
+    const normalized=normalizePhone(phone.value);
+    if(!normalized){
+      status.textContent='電話番号をご確認ください。';
+      phone.focus();
+      return;
+    }
+    hiddenPhone.value=normalized;
+    parentOrigin.value=window.location.origin;
+    submit.disabled=true;
+    status.textContent='初回対象を確認しています…';
+    clearTimeout(timer);
+    timer=setTimeout(function(){
+      submit.disabled=false;
+      status.textContent='確認に時間がかかっています。もう一度お試しください。';
+    },20000);
+    postForm.submit();
+  });
+
+  window.addEventListener('message',function(e){
+    if(!trustedOrigin(e.origin))return;
+    const data=e.data||{};
+    if(data.source!=='relax-stripe-gas')return;
+    clearTimeout(timer);
+
+    if(data.ok&&typeof data.checkoutUrl==='string'&&data.checkoutUrl.indexOf('https://checkout.stripe.com/')===0){
+      status.textContent='Stripeへ移動します…';
+      window.location.assign(data.checkoutUrl);
+      return;
+    }
+
+    submit.disabled=false;
+    status.textContent=data.message||'確認できませんでした。時間をおいて再度お試しください。';
+  });
+})();
+</script>
 </body>
 </html>
