@@ -8,6 +8,14 @@
 <style>
 :root{--pink:#eb6ba4;--ink:#2b292b;--muted:#6f686c;--line:#eadfe4;--soft:#fff8fb}
 *{box-sizing:border-box}body{margin:0;background:#faf7f8;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;line-height:1.75}.wrap{max-width:640px;margin:0 auto;background:#fff;min-height:100vh;padding:28px 20px 56px}.brand{font-weight:700;color:var(--pink);font-size:15px}.badge{display:inline-block;margin:18px 0 8px;padding:4px 9px;border-radius:999px;background:#fff3f8;color:#9c456d;font-size:12px;font-weight:700}.title{font-size:28px;line-height:1.45;margin:8px 0 10px}.lead{color:var(--muted);font-size:15px}.card{margin-top:26px;border:1px solid var(--line);border-radius:14px;padding:20px;background:#fff}.name{font-size:22px;font-weight:700}.meta{color:var(--muted);font-size:14px;margin-top:3px}.notice{margin-top:16px;background:var(--soft);border-left:4px solid var(--pink);padding:13px 14px;font-size:14px}.tickets{display:grid;gap:12px;margin-top:20px}.ticket{display:block;text-decoration:none;border:1px solid var(--pink);border-radius:12px;padding:15px 16px;color:var(--ink);background:#fff}.ticket strong{display:block;color:#9c456d;font-size:18px}.ticket span{display:block;font-size:14px;margin-top:3px;color:var(--muted)}.ticket.primary{background:var(--pink);color:#fff}.ticket.primary strong,.ticket.primary span{color:#fff}.help{margin-top:24px;font-size:13px;color:var(--muted)}.steps{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}.steps h2{font-size:18px;margin:0 0 10px}.steps ol{margin:0;padding-left:1.4em}.steps li{margin:8px 0}.test{margin-top:28px;padding:12px 14px;background:#fff9e8;border:1px solid #f0dfaa;border-radius:10px;font-size:13px;color:#5c4d27}
+.initial-form{margin-top:20px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.initial-form label{display:block;font-size:14px;font-weight:700}
+.initial-form input{width:100%;margin-top:7px;padding:13px 14px;border:1px solid #d9cdd3;border-radius:10px;background:#fff;font-size:18px}
+.initial-form .ticket{width:100%;margin-top:12px;cursor:pointer;font:inherit}
+.initial-form .ticket:disabled{opacity:.65;cursor:wait}
+.gate-note{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.gate-status{min-height:1.6em;margin:10px 0 0;font-size:13px;font-weight:700;color:#9c456d}
+.gate-frame{position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
 </style>
 </head>
 <body><main class="wrap">
@@ -19,14 +27,94 @@
 <div class="name">梅津相談員</div>
 <div class="meta">話し相手｜100円／分｜チケット有効期限6か月</div>
 <div class="notice"><b>決済後に電話番号が表示されます。</b><br>請求書・領収書もその場で確認できます。</div>
+<form class="initial-form" id="initial-ticket-form" novalidate>
+<label for="initial-phone">初回30分をご利用の方</label>
+<input id="initial-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09012345678" aria-describedby="initial-note initial-status" required>
+<button class="ticket primary" id="initial-submit" type="submit"><strong>初回30分　1,000円</strong><span>電話番号で初回対象を確認して、そのままStripeへ進みます</span></button>
+<p class="gate-note" id="initial-note">電話番号は同じ相談員の重複購入確認に使用します。Google Apps Scriptの画面は表示しません。</p>
+<p class="gate-status" id="initial-status" aria-live="polite"></p>
+</form>
 <div class="tickets">
-<a class="ticket primary" href="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec?action=promo&consultant_no=0000-3&lp_id=LP001"><strong>初回30分　1,000円</strong><span>電話番号入力 → 割引自動適用。コード入力不要</span></a>
 <a class="ticket" href="https://buy.stripe.com/test_bJe14p7JBdh82oj8xOgQE0g?client_reference_id=0000-3_LP001"><strong>30分　3,000円</strong><span>通常チケット</span></a>
 <a class="ticket" href="https://buy.stripe.com/test_28E3cx1ldgtkd2X5lCgQE0h"><strong>60分　6,000円</strong><span>通常チケット</span></a>
 <a class="ticket" href="https://buy.stripe.com/test_28EeVfaVNa4W6Ez3dugQE0i"><strong>90分　9,000円</strong><span>通常チケット</span></a>
 </div>
 <p class="help">※相談員の電話番号はこのページには表示していません。支払い成功後のStripe画面でのみ案内します。</p>
 </section>
-<section class="steps"><h2>今回の確認ポイント</h2><ol><li>初回30分を押すと電話番号入力画面が開く</li><li>コード入力なしでStripeへ進み、初回価格1,000円になる</li><li>通常30・60・90分はGASを通らず直接Stripeへ進む</li><li>決済後に梅津相談員の電話番号が表示される</li><li>請求書・領収書PDFを1タップで開ける</li></ol></section>
+<section class="steps"><h2>今回の確認ポイント</h2><ol><li>このページ内で電話番号を入力する</li><li>Google Apps Scriptの上部バナーを見せずにStripeへ進む</li><li>Stripeで初回価格1,000円・氏名欄なしになる</li><li>通常30・60・90分はGASを通らず直接Stripeへ進む</li><li>決済後に梅津相談員の電話番号が表示される</li></ol></section>
 <div class="test"><b>テスト環境です。</b> 実際の請求は発生しません。カード決済テストは 4242 4242 4242 4242 を使用してください。</div>
-</main></body></html>
+
+<iframe class="gate-frame" id="stripe-gate-frame" name="stripe-gate-frame" title="初回購入確認"></iframe>
+<form id="stripe-gate-post" action="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec" method="post" target="stripe-gate-frame" hidden>
+<input type="hidden" name="action" value="promo">
+<input type="hidden" name="embed" value="1">
+<input type="hidden" name="consultant_no" value="0000-3">
+<input type="hidden" name="lp_id" value="LP001">
+<input type="hidden" name="phone" id="gate-phone" value="">
+<input type="hidden" name="parent_origin" id="gate-parent-origin" value="">
+</form>
+</main>
+<script>
+(function(){
+  const uiForm=document.getElementById('initial-ticket-form');
+  const postForm=document.getElementById('stripe-gate-post');
+  const phone=document.getElementById('initial-phone');
+  const hiddenPhone=document.getElementById('gate-phone');
+  const parentOrigin=document.getElementById('gate-parent-origin');
+  const submit=document.getElementById('initial-submit');
+  const status=document.getElementById('initial-status');
+  let timer=null;
+
+  function normalizePhone(v){
+    let d=String(v||'').replace(/\D/g,'');
+    if(d.indexOf('81')===0&&d.length>=11)d='0'+d.slice(2);
+    return /^0\d{9,10}$/.test(d)?d:'';
+  }
+
+  function trustedOrigin(origin){
+    try{
+      const u=new URL(origin);
+      return u.protocol==='https:'&&(
+        u.hostname==='script.google.com'||
+        u.hostname==='script.googleusercontent.com'||
+        u.hostname.endsWith('.googleusercontent.com')
+      );
+    }catch(_){return false}
+  }
+
+  uiForm.addEventListener('submit',function(e){
+    e.preventDefault();
+    const normalized=normalizePhone(phone.value);
+    if(!normalized){
+      status.textContent='電話番号をご確認ください。';
+      phone.focus();
+      return;
+    }
+    hiddenPhone.value=normalized;
+    parentOrigin.value=window.location.origin;
+    submit.disabled=true;
+    status.textContent='初回対象を確認しています…';
+    clearTimeout(timer);
+    timer=setTimeout(function(){
+      submit.disabled=false;
+      status.textContent='確認に時間がかかっています。もう一度お試しください。';
+    },20000);
+    postForm.submit();
+  });
+
+  window.addEventListener('message',function(e){
+    if(!trustedOrigin(e.origin))return;
+    const data=e.data||{};
+    if(data.source!=='relax-stripe-gas')return;
+    clearTimeout(timer);
+    if(data.ok&&typeof data.checkoutUrl==='string'&&data.checkoutUrl.indexOf('https://checkout.stripe.com/')===0){
+      status.textContent='Stripeへ移動します…';
+      window.location.assign(data.checkoutUrl);
+      return;
+    }
+    submit.disabled=false;
+    status.textContent=data.message||'確認できませんでした。時間をおいて再度お試しください。';
+  });
+})();
+</script>
+</body></html>
