@@ -9,14 +9,22 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&amp;family=Noto+Serif+JP:wght@500;600&amp;display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="/lp001/style.css?v=20260917d"/>
+<link rel="stylesheet" href="/lp001/style.css?v=20260919a"/>
 <style>
-.ticket-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
-.ticket-options .cta{min-height:64px;padding:10px 6px;flex-direction:column;gap:1px;text-align:center;line-height:1.35}
+.purchase-block{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.purchase-label{font-size:14px;font-weight:700;line-height:1.5;color:var(--text)}
+.first-ticket-cta{margin-top:10px!important;min-height:60px;flex-direction:column;gap:1px;text-align:center;line-height:1.35}
+.first-ticket-cta small{font-size:13px;font-weight:700;opacity:.96}
+.first-ticket-note{margin:8px 0 0;font-size:12px;line-height:1.65;color:var(--muted)}
+.purchase-divider{display:flex;align-items:center;gap:10px;margin:14px 0 8px;color:var(--muted);font-size:12px;font-weight:600}
+.purchase-divider:before,.purchase-divider:after{content:"";height:1px;background:var(--line);flex:1}
+.ticket-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:0}
+.ticket-options .cta{margin-top:0!important;min-height:64px;padding:10px 4px;flex-direction:column;gap:1px;text-align:center;line-height:1.3}
+.ticket-options .cta span{font-size:16px}
 .ticket-options .cta small{font-size:12px;font-weight:600;opacity:.94}
 .purchase-note{margin:10px 0 0;font-size:12px;line-height:1.65;color:var(--muted)}
 .preview-label{display:inline-block;margin-bottom:10px;padding:4px 8px;border:1px solid #d8cfca;border-radius:4px;font-size:11px;color:#6f6a6d;background:#fff}
-@media(max-width:380px){.ticket-options{grid-template-columns:1fr}.ticket-options .cta{min-height:52px}}
+@media(max-width:380px){.ticket-options{gap:6px}.ticket-options .cta{min-height:60px;padding:9px 3px}.ticket-options .cta span{font-size:15px}.ticket-options .cta small{font-size:11px}}
 </style>
 </head>
 <body>
@@ -60,9 +68,8 @@
 <li class="use-step"><span class="step-number">2</span><div><b>Stripeで購入</b><p>氏名・メールアドレス・電話番号を入力して決済します。</p></div></li>
 <li class="use-step"><span class="step-number">3</span><div><b>表示された電話番号へ発信</b><p>決済完了画面に相談員の電話番号と、請求書・領収書のボタンが表示されます。</p></div></li>
 </ol></div>
-<div class="first-use-box"><div class="benefit-label">初回30分割引｜サンドボックス接続済み</div><h3>同じ相談員をStripeで初めて利用する方は、30分を1回だけ初回価格で利用できます。</h3><p>STORESでその相談員の初回割引をご利用済みの方も、Stripeではもう一度対象です。コードのコピー・入力は不要です。</p></div>
 <div class="safety-box"><h3>購入後も確認できます</h3><p><b>決済完了後、相談員の電話番号を表示します。</b>その場で請求書・領収書PDFも開けます。チケットは購入日から6か月有効です。</p></div>
-<div class="test-notice" role="note"><b>現在はStripeサンドボックスの購入テストです。</b><span>実際の請求は発生しません。初回30分は電話番号入力後、割引が自動適用されます。</span></div>
+<div class="test-notice" role="note"><b>現在はStripeサンドボックスの購入テストです。</b><span>実際の請求は発生しません。</span></div>
 </div></section>
 <section class="section-soft" id="story-after"><div class="pad">
 <div class="kicker">話したあと</div><h2>次の一歩を、自分で選べる状態へ。</h2>
@@ -79,14 +86,18 @@
 <p class="muted">Googleカレンダー連携済みの相談員だけを本番掲載する方針です。現在は決済導線確認のため梅津相談員のみ表示しています。</p>
 <div class="counselors">
 <article class="person" data-counselor-id="0000-3"><div class="person-top"><div class="avatar"><img alt="梅津 靖裕" src="/assets/images/umezu.png"/></div><div><div class="person-name">梅津 靖裕</div><div class="meta">50代男性｜話し相手</div></div></div><p class="one-line">どんなことでもお気軽にお電話ください。いつでもお待ちしています。</p><div class="tags"><span class="tag">人間関係</span><span class="tag">仕事</span><span class="tag">悩み全般</span></div><div class="schedule" id="realtime-schedule-0000-3"><div aria-live="polite" class="realtime-status" id="realtime-status-0000-3"><div class="realtime-status-label" id="realtime-label-0000-3">待機予定</div><div class="realtime-status-time" id="realtime-time-0000-3">待機予定を読み込み中…</div></div><div class="schedule-head"><b>今後1週間の予定</b></div><ul class="schedule-list" id="realtime-week-0000-3"><li>待機予定を読み込み中…</li></ul></div>
-<div class="price">時間を選んで購入</div>
-<a class="cta" style="margin-top:12px" href="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec?action=promo&consultant_no=0000-3&lp_id=LP001"><span>初回30分</span><small>初回価格 1,000円</small></a>
+<div class="purchase-block">
+<div class="purchase-label">ご利用時間を選ぶ</div>
+<a class="cta first-ticket-cta" href="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec?action=promo&consultant_no=0000-3&lp_id=LP001"><span>初回30分</span><small>1,000円</small></a>
+<p class="first-ticket-note">同じ相談員をStripeで初めて利用する方は1回対象です。STORESで初回割引をご利用済みでも、Stripeではもう一度ご利用いただけます。割引コードの入力は不要です。</p>
+<div class="purchase-divider"><span>通常料金</span></div>
 <div class="ticket-options" aria-label="梅津相談員の通常購入時間">
 <a class="cta" href="https://buy.stripe.com/test_bJe14p7JBdh82oj8xOgQE0g?client_reference_id=0000-3_LP001"><span>30分</span><small>3,000円</small></a>
 <a class="cta" href="https://buy.stripe.com/test_28E3cx1ldgtkd2X5lCgQE0h?client_reference_id=0000-3_LP001"><span>60分</span><small>6,000円</small></a>
 <a class="cta" href="https://buy.stripe.com/test_28EeVfaVNa4W6Ez3dugQE0i?client_reference_id=0000-3_LP001"><span>90分</span><small>9,000円</small></a>
 </div>
 <p class="purchase-note">決済後に梅津相談員の電話番号、請求書・領収書を確認できます。</p>
+</div>
 </article>
 </div>
 </div></section>
@@ -94,7 +105,7 @@
 </main>
 <footer class="footer">© Relax Service / An Funny Project LLC</footer>
 </div>
-<script src="/lp001/lp-config.js?v=20260917d" defer></script>
-<script src="/lp001/app.js?v=20260917d" defer></script>
+<script src="/lp001/lp-config.js?v=20260919a" defer></script>
+<script src="/lp001/app.js?v=20260919a" defer></script>
 </body>
 </html>
