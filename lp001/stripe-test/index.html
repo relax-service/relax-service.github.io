@@ -64,6 +64,7 @@
   const submit=document.getElementById('initial-submit');
   const status=document.getElementById('initial-status');
   let timer=null;
+  let startedAt=0;
 
   function normalizePhone(v){
     let d=String(v||'').replace(/\D/g,'');
@@ -92,6 +93,7 @@
     }
     hiddenPhone.value=normalized;
     parentOrigin.value=window.location.origin;
+    startedAt=performance.now();
     submit.disabled=true;
     status.textContent='初回対象を確認しています…';
     clearTimeout(timer);
@@ -108,7 +110,8 @@
     if(data.source!=='relax-stripe-gas')return;
     clearTimeout(timer);
     if(data.ok&&typeof data.checkoutUrl==='string'&&data.checkoutUrl.indexOf('https://checkout.stripe.com/')===0){
-      status.textContent='Stripeへ移動します…';
+      const sec=startedAt?((performance.now()-startedAt)/1000).toFixed(1):'';
+      status.textContent='Stripeへ移動します…'+(sec?'（'+sec+'秒）':'');
       window.location.assign(data.checkoutUrl);
       return;
     }
