@@ -73,17 +73,16 @@
     observe("#service-guide","service_reach");
     observe("#people","counselor_view");
 
-    const initialForm=document.getElementById("initial-ticket-form");
-    if(initialForm){
+    document.querySelectorAll("[data-initial-checkout]").forEach(function(initialForm){
       initialForm.addEventListener("submit",function(){
         track("purchase_cta_click",{
-          consultant_no:counselorFrom(initialForm),
+          consultant_no:initialForm.getAttribute("data-consultant-no")||counselorFrom(initialForm),
           ticket_kind:"initial",
           duration:30,
           amount:1000
         });
       });
-    }
+    });
 
     document.addEventListener("click",function(e){
       const stripeLink=e.target.closest('a[href*="buy.stripe.com"],a[href*="checkout.stripe.com"]');
