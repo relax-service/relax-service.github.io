@@ -298,3 +298,16 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
 @media(max-width:480px){
   .manga-summary div{padding:9px 5px;font-size:11px}
 }
+
+
+/* Koichi: use Mizuki manga-stack template */
+.koichi-scene{aspect-ratio:4/3}
+.koichi-scene img{position:absolute;top:0;width:200%;max-width:none;height:auto;display:block;transform:none}
+.koichi-scene-1 img{left:0;top:0}
+.koichi-scene-2 img{left:-100%;top:0}
+.koichi-scene-3 img{left:0;top:-100%}
+.koichi-scene-4 img{left:-100%;top:-100%}
+.koichi-scene-5 img{left:0;top:-200%}
+.koichi-scene-6 img{left:-100%;top:-200%}
+.koichi-scene-7 img{left:0;top:-300%}
+.koichi-scene-8 img{left:-100%;top:-300%}
