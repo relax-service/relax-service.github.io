@@ -288,3 +288,13 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
   .after-point{font-size:14px}
   .after-point b{font-size:16px}
 }
+
+
+/* LP shared: manga summary */
+.manga-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);background:#fff}
+.manga-summary div{padding:10px 8px;text-align:center;border-right:1px solid var(--line);font-size:12px;line-height:1.5;color:#514b4f}
+.manga-summary div:last-child{border-right:0}
+.manga-summary b{display:block;margin-bottom:2px;color:var(--brand-primary);font-size:10px;letter-spacing:.06em}
+@media(max-width:480px){
+  .manga-summary div{padding:9px 5px;font-size:11px}
+}
