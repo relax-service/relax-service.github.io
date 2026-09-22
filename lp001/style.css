@@ -247,3 +247,26 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
 .purchase-note{margin:10px 0 0;font-size:12px;line-height:1.65;color:var(--muted)}
 .preview-label{display:inline-block;margin-bottom:10px;padding:4px 8px;border:1px solid #d8cfca;border-radius:4px;font-size:11px;color:#6f6a6d;background:#fff}
 @media(max-width:380px){.ticket-options{gap:6px}.ticket-options .cta{min-height:60px;padding:9px 3px}.ticket-options .cta span{font-size:15px}.ticket-options .cta small{font-size:11px}}
+
+
+/* LP shared: compact reading rhythm */
+.compact-points{display:grid;gap:0;margin-top:18px;border-top:1px solid var(--line-strong)}
+.compact-point{padding:15px 2px;border-bottom:1px solid var(--line);font-size:15px;line-height:1.65;color:#4f494c}
+.compact-point:before{content:"✓";display:inline-block;margin-right:9px;color:var(--brand-primary);font-weight:700}
+.compact-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:20px 0 4px}
+.compact-flow div{padding:13px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;text-align:center}
+.compact-flow b{display:block;font-size:15px;margin-bottom:3px}
+.compact-flow span{font-size:12px;line-height:1.55;color:var(--muted)}
+.secondary-story{margin-top:22px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.secondary-story summary{list-style:none;cursor:pointer;padding:15px 16px;font-weight:700;font-size:15px}
+.secondary-story summary::-webkit-details-marker{display:none}
+.secondary-story summary:after{content:"＋";float:right;color:var(--brand-primary)}
+.secondary-story[open] summary:after{content:"−"}
+.secondary-story-body{padding:0 16px 16px}
+.short-note{font-size:13px;line-height:1.7;color:var(--muted);margin:10px 0 0}
+@media(max-width:480px){
+  .compact-flow{gap:6px}
+  .compact-flow div{padding:11px 5px}
+  .compact-flow b{font-size:14px}
+  .compact-flow span{font-size:11px}
+}
