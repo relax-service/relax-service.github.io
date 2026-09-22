@@ -311,3 +311,12 @@ h3{font-size:21px;line-height:1.5;margin-bottom:10px}
 .koichi-scene-6 img{left:-100%;top:-200%}
 .koichi-scene-7 img{left:0;top:-300%}
 .koichi-scene-8 img{left:-100%;top:-300%}
+
+
+/* Koichi composite manga crop: 2 columns x 4 rows */
+.koichi-scene{aspect-ratio:4/3}
+.koichi-scene img{position:absolute;max-width:none;width:200%;height:auto;transform:none!important;left:0;top:0}
+.koichi-c2 img{left:-100%}
+.koichi-r2 img{top:-100%}
+.koichi-r3 img{top:-200%}
+.koichi-r4 img{top:-300%}
