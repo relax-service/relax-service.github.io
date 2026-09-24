@@ -83,7 +83,14 @@
       if(data.source!=="relax-stripe-gas")return;
       clearTimeout(timer);
 
-      if(data.ok&&typeof data.checkoutUrl==="string"&&data.checkoutUrl.indexOf("https://checkout.stripe.com/")===0){
+      let stripeUrlOk=false;
+      if(data.ok&&typeof data.checkoutUrl==="string"){
+        try{
+          const u=new URL(data.checkoutUrl);
+          stripeUrlOk=u.protocol==="https:"&&(u.hostname==="checkout.stripe.com"||u.hostname==="buy.stripe.com");
+        }catch(_){}
+      }
+      if(stripeUrlOk){
         status.textContent="Stripeへ移動します…";
         if(typeof window.relaxTrack==="function"){
           window.relaxTrack("checkout_start",{consultant_no:consultantNo,ticket_kind:"initial",duration:30,amount:1000});
