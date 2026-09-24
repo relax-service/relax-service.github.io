@@ -98,6 +98,8 @@
   }
 
   document.addEventListener("DOMContentLoaded",function(){
+    const policy=window.RELAX_PAYMENT_POLICY||{};
+    if(policy.mode==="regular_only") return;
     document.querySelectorAll("[data-initial-checkout]").forEach(setup);
   });
 })();
