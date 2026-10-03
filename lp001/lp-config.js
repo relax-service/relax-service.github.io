@@ -2,7 +2,7 @@ window.LP_CONFIG = Object.freeze({
   templateVersion: 'LP_TEMPLATE_v1.0-candidate',
   lpId: 'LP001',
   pageTitle: '勇気を出して夫を誘ったのに、断られた夜。｜リラックスサービス',
-  pageDescription: '誰にも言いにくい夫婦・恋愛・性の気持ちを、声でほどく時間。話しやすそうな人と待機予定を確認できます。',
+  pageDescription: '誰にも言いにくい夫婦・恋愛・性の気持ちを、声でほどく時間。今の気持ちに気づき、次の一歩を選びやすくします。',
   hero: {
     kicker: '夫婦・恋愛のことを、誰にも言えない夜に',
     heading: '勇気を出して夫を誘ったのに、断られた夜。',
@@ -27,20 +27,10 @@ window.LP_CONFIG = Object.freeze({
     timezone: 'Asia/Tokyo',
     days: 7
   },
+  // Purchase links for the current public LP are rendered explicitly in story/mizuki/index.html.
+  // Do not keep test Stripe URLs in production configuration.
   payments: {
-    supporter: {
-      30:  { price: 3000,  url: 'https://buy.stripe.com/test_fZu9AVaVN6SKd2X7tKgQE00', firstUseDiscount: true },
-      60:  { price: 6000,  url: 'https://buy.stripe.com/test_fZu00l9RJ5OG2oj8xOgQE01' },
-      90:  { price: 9000,  url: 'https://buy.stripe.com/test_7sY4gBd3Velc3snbK0gQE02' },
-      120: { price: 12000, url: 'https://buy.stripe.com/test_8x29AV7JB5OG8MH3dugQE0d' }
-    },
-    counselor150: {
-      30:  { price: 4500,  url: 'https://buy.stripe.com/test_14AdRb0h9dh80gb7tKgQE03', firstUseDiscount: true },
-      60:  { price: 9000,  url: 'https://buy.stripe.com/test_14A9AV0h95OG0gbeWcgQE08' },
-      90:  { price: 13500, url: 'https://buy.stripe.com/test_9B614pd3V90SaUP6pGgQE09' },
-      120: { price: 18000, url: 'https://buy.stripe.com/test_4gMaEZ7JB0um4wr15mgQE0c' }
-    },
-    counselorIds: ['0099','0117','0125']
+    counselorIds: []
   }
 });
 

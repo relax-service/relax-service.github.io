@@ -29,7 +29,7 @@
       if(!title||!body||title.textContent.trim()!=="Stripeで購入") return;
       body.textContent=regularOnly
         ?"30分・60分・90分から選び、Stripeで購入します。"
-        :"初回30分は電話番号で対象確認後、Stripeへ進みます。通常30分・60分・90分はStripeで購入します。";
+        :"初回30分は電話番号で対象確認後、Stripeへ進みます。Stripeの画面に沿って必要事項を入力します。通常30分・60分・90分もStripeで購入します。";
     });
   }
 
