@@ -19,7 +19,23 @@
 .preview-gate{margin-top:16px;padding:14px 15px;border:1px solid var(--line);border-radius:10px;background:#faf8f6;font-size:13px;line-height:1.7;color:var(--muted)}
 .preview-gate b{color:var(--text)}
 </style>
-</head>
+<script>
+window.RELAX_LP_ANALYTICS={lp_id:"LP002",scenario:"takeshi",lp_version:"20261003a"};
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  window.RELAX_ANALYTICS_DISABLED=params.get("qa")==="1";
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=window.gtag||function(){window.dataLayer.push(arguments);};
+  if(window.RELAX_ANALYTICS_DISABLED)return;
+  const x=document.createElement("script");
+  x.async=true;
+  x.src="https://www.googletagmanager.com/gtag/js?id=G-X63W5K5P5Q";
+  document.head.appendChild(x);
+  window.gtag("js",new Date());
+  window.gtag("config","G-X63W5K5P5Q");
+})();
+</script>
+<script src="/assets/js/lp-analytics.js?v=20260922b" defer></script>\n</head>
 <body>
 <div class="wrap">
 <div class="brandbar">
@@ -73,7 +89,7 @@
 <li class="use-step"><span class="step-number">2</span><div><b>Stripeで購入</b><p>初回30分は電話番号で対象確認後、Stripeへ進みます。</p></div></li>
 <li class="use-step"><span class="step-number">3</span><div><b>表示された電話番号へ発信</b><p>決済完了後の案内に沿って、そのままお電話できます。</p></div></li>
 </ol></div>
-<div class="safety-box"><h3>購入後も確認できます</h3><p><b>決済完了後、選んだ相談員の電話番号をご案内します。</b>チケットは購入日から6か月有効です。</p></div>
+<div class="safety-box"><h3>購入後も確認できます</h3><p><b>決済完了後、選んだ人の電話番号をご案内します。</b>チケットは購入日から6か月有効です。</p></div>
 </div></section>
 
 <section class="section-soft" id="story-after"><div class="pad">
@@ -116,8 +132,8 @@
 <section class="section-soft" id="people"><div class="pad">
 <div class="kicker">話せる人</div>
 <h2>声や雰囲気から、話しやすそうな人を選べます。</h2>
-<p class="muted">本番では、テーマとの相性・稼働状況・待機予定を確認した相談員を表示します。</p>
-<div class="preview-gate"><b>公開前確認ページです。</b><br>相談員カード・待機予定・本番決済は最終接続前のため、このページからは購入できません。</div>
+<p class="muted">本番では、テーマとの相性・稼働状況・待機予定を確認した「話せる人」を表示します。</p>
+<div class="preview-gate"><b>公開前確認ページです。</b><br>話せる人のカード・待機予定・本番決済は最終接続前のため、このページからは購入できません。</div>
 </div></section>
 
 <section id="faq"><div class="pad">
@@ -126,7 +142,7 @@
 <details class="faq-item"><summary>何から話せばいいですか？</summary><div class="faq-answer">「何から話せばいいか分からない」と、そのまま伝えて大丈夫です。今いちばん頭から離れないことから、一緒に整理します。</div></details>
 <details class="faq-item"><summary>途中で黙ってしまっても大丈夫ですか？</summary><div class="faq-answer">大丈夫です。考える時間や沈黙も含めて、その人のペースで話せます。</div></details>
 <details class="faq-item"><summary>途中で終わりたくなったら？</summary><div class="faq-answer">無理に話し続ける必要はありません。ご自身の判断で通話を終えられます。</div></details>
-<details class="faq-item"><summary>自動で継続購入されますか？</summary><div class="faq-answer">されません。必要な時に、必要な時間のチケットを都度購入します。</div></details>
+<details class="faq-item"><summary>自動で継続購入されますか？</summary><div class="faq-answer">されません。必要な時に、必要な時間のチケットを都度購入します。</div></details>\n<details class="faq-item"><summary>STORESで初回割引を使ったことがあります</summary><div class="faq-answer">Stripe移行後は、話す人ごとに初回30分をご利用いただけます。電話番号で対象確認後、そのままStripeへ進みます。</div></details>
 </div>
 </div></section>
 
