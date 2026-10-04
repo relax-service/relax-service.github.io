@@ -8,6 +8,40 @@
     scenario:cfg.scenario||"",
     lp_version:cfg.lp_version||""
   };
+  const ATTR_KEY="relax_lp_attribution_v1";
+  const ATTR_MAX_AGE_MS=7*24*60*60*1000;
+
+  function readAttribution(){
+    const params=new URLSearchParams(location.search);
+    const fresh={
+      utm_source:params.get("utm_source")||"",
+      utm_medium:params.get("utm_medium")||"",
+      utm_campaign:params.get("utm_campaign")||"",
+      utm_content:params.get("utm_content")||"",
+      landing_path:location.pathname,
+      attribution_ts:Date.now()
+    };
+    const hasFresh=fresh.utm_source||fresh.utm_medium||fresh.utm_campaign||fresh.utm_content;
+
+    try{
+      if(hasFresh){
+        localStorage.setItem(ATTR_KEY,JSON.stringify(fresh));
+        return fresh;
+      }
+      const raw=localStorage.getItem(ATTR_KEY);
+      if(!raw)return {};
+      const stored=JSON.parse(raw);
+      if(!stored.attribution_ts||Date.now()-Number(stored.attribution_ts)>ATTR_MAX_AGE_MS){
+        localStorage.removeItem(ATTR_KEY);
+        return {};
+      }
+      return stored;
+    }catch(_){
+      return hasFresh?fresh:{};
+    }
+  }
+
+  const attribution=readAttribution();
   const sent=new Set();
 
   function clean(obj){
@@ -21,7 +55,7 @@
 
   function track(name,params){
     if(typeof window.gtag!=="function")return;
-    const payload=Object.assign({},base,params||{});
+    const payload=Object.assign({},base,attribution,params||{});
     if(new URLSearchParams(location.search).get("debug")==="1"){
       payload.debug_mode=true;
     }

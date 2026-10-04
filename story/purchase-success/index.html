@@ -95,6 +95,23 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     if(message) errorMessage.textContent=message;
   }
 
+  function storedAttribution(){
+    try{
+      const raw=localStorage.getItem("relax_lp_attribution_v1");
+      if(!raw)return {};
+      const data=JSON.parse(raw);
+      const ts=Number(data.attribution_ts||0);
+      if(!ts||Date.now()-ts>7*24*60*60*1000)return {};
+      return {
+        utm_source:data.utm_source||"",
+        utm_medium:data.utm_medium||"",
+        utm_campaign:data.utm_campaign||"",
+        utm_content:data.utm_content||"",
+        landing_path:data.landing_path||""
+      };
+    }catch(_){return {}}
+  }
+
   function track(data){
     if(!window.gtag){
       window.dataLayer=window.dataLayer||[];
@@ -159,7 +176,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     document.getElementById("confirmation").textContent=
       data.confirmationId ? "決済確認番号："+String(data.confirmationId) : "";
 
-    const analytics={
+    const analytics=Object.assign({
       lp_id:data.lpId,
       consultant_no:data.consultantNo,
       ticket_kind:data.ticketKind,
@@ -167,18 +184,18 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
       amount:data.amountJpy,
       value:data.amountJpy,
       currency:"JPY"
-    };
+    },storedAttribution());
     track(analytics);
 
     document.addEventListener("click",function(e){
       const a=e.target.closest&&e.target.closest("a.phone-call");
       if(!a||!window.gtag)return;
-      window.gtag("event","call_click",{
+      window.gtag("event","call_click",Object.assign({
         lp_id:data.lpId,
         consultant_no:data.consultantNo,
         ticket_kind:data.ticketKind,
         duration:data.durationMinutes
-      });
+      },storedAttribution()));
     },{once:true});
   }
 
