@@ -57,34 +57,35 @@
 
   // Eligibility is based on calendar_slots, NOT week_slots (which is
   // filtered by the LINE WORKS OFF action in v0.33).
-  function updateCalendarListingEligibility(data, now){
-    const helper=window.RelaxLpScheduleEligibility;
-    if(!helper || !helper.evaluate) return;
-    const result=helper.evaluate(data.calendar_slots, now, scheduleDays);
-    // Backend versions without calendar_slots are UNKNOWN: keep legacy
-    // display until the new independent Calendar API contract is deployed.
-    if(!result.known) return;
+  function setCounselorCardEligible(eligible){
     const card=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
     if(!card) return;
-    card.hidden=!result.eligible;
-    if(result.eligible) card.style.removeProperty('display');
-    else card.style.display='none';
-
+    card.hidden=!eligible;
+    card.style.display=eligible ? '' : 'none';
     const container=card.closest('.counselors');
     const section=container && container.closest('section');
     if(!container || !section) return;
     const anyVisible=[...container.querySelectorAll('.person')].some(node=>!node.hidden);
     section.hidden=!anyVisible;
-    if(anyVisible) section.style.removeProperty('display');
-    else section.style.display='none';
-
-    // LP001 can have just one counselor; do not leave an anchor to
-    // a hidden counselor section or a purchasable ticket inside it.
+    section.style.display=anyVisible ? '' : 'none';
+    // On a single-counselor LP, never leave a clickable purchase CTA
+    // or an anchor to a counselor section without eligible slots.
     document.querySelectorAll('a[href="#people"]').forEach(link=>{
       link.hidden=!anyVisible;
-      if(anyVisible) link.style.removeProperty('display');
-      else link.style.display='none';
+      link.style.display=anyVisible ? '' : 'none';
     });
+  }
+
+  function updateCalendarListingEligibility(data, now){
+    const helper=window.RelaxLpScheduleEligibility;
+    // Unknown/failed Calendar state != confirmed zero, but must not
+    // allow purchases while the schedule cannot be confirmed.
+    if(!helper || !helper.evaluate){
+      setCounselorCardEligible(false);
+      return;
+    }
+    const result=helper.evaluate(data.calendar_slots, now, scheduleDays);
+    setCounselorCardEligible(data.calendar_ok===true && result.known && result.eligible);
   }
 
   function prioritizeRealtimeCard(online){
@@ -140,6 +141,7 @@
   }
 
   function renderFailure(){
+    setCounselorCardEligible(false);
     const box=$('realtime-status-0000-3');
     const label=$('realtime-label-0000-3');
     const time=$('realtime-time-0000-3');
@@ -195,7 +197,10 @@
   }
 
   function render(data){
-    if(!data || data.consultant_no !== consultantNo) return;
+    if(!data || data.consultant_no !== consultantNo){
+      setCounselorCardEligible(false);
+      return;
+    }
     const box=$('realtime-status-0000-3');
     const label=$('realtime-label-0000-3');
     const time=$('realtime-time-0000-3');
@@ -288,13 +293,15 @@
       lastStatusData=data;
       render(data);
     }catch(e){
-      if(lastStatusData) render(lastStatusData);
-      else renderFailure();
+      // The previous successful response may no longer represent current
+      // availability. Do not leave an old purchase path visible.
+      renderFailure();
       console.warn('Realtime status load failed',e);
     }
   }
 
   applyLpConfig();
+  setCounselorCardEligible(false);
   setupCounselorDisclosure();
   linkStaticSchedules();
   renderCustomerVoices();
@@ -303,7 +310,7 @@
   setInterval(refresh,60000);
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden){
-      if(lastStatusData) render(lastStatusData);
+      setCounselorCardEligible(false);
       refresh();
     }
   });
