@@ -1,0 +1,51 @@
+--- 相談員リアルタイム状態_PoC_v0.33.gs
++++ 相談員リアルタイム状態_PoC_v0.34_QA.gs
+@@ -5,5 +5,5 @@
+  *
+  * 対象：梅津相談員
+- * build: 2026-09-09-v0.33
++ * build: 2026-10-10-v0.34-qa
+  *************************************************/
+ 
+@@ -23,5 +23,5 @@
+ const TIMEZONE = 'Asia/Tokyo';
+ 
+-const BUILD_ID = '2026-09-09-v0.33';
++const BUILD_ID = '2026-10-10-v0.34-qa';
+ 
+ // LINE WORKS Bot No.
+@@ -1295,5 +1295,9 @@
+ 
+       week_slots:
+-        []
++        [],
++
++      // 取得エラーを「待機予定0件」と誤判定させない。
++      calendar_slots:
++        null
+ 
+     };
+@@ -1422,6 +1426,11 @@
+    * 今後7日間の予定
+    */
++  // LINE WORKS OFF と独立した、Googleカレンダー上の待機予定。
++  // 掲載判定は calendar_slots、リアルタイム表示は week_slots を使う。
++  const calendarSlots =
++    getWaitingEvents7Days_();
++
+   let slots =
+-    getWaitingEvents7Days_();
++    calendarSlots;
+ 
+ 
+@@ -1536,5 +1545,9 @@
+ 
+     week_slots:
+-      slots
++      slots,
++
++    // 掲載資格専用：LINE WORKS の終了操作では現在枠を除外しない。
++    calendar_slots:
++      calendarSlots
+ 
+   };
