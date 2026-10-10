@@ -8,6 +8,8 @@ on:
       - 'lp001/index.html'
       - 'story/mizuki/index.html'
       - 'tests/lp001-schedule-eligibility.test.cjs'
+      - 'tests/lp001-schedule-visibility.test.cjs'
+      - 'tests/gas-v033-to-v034-calendar-slots.patch'
       - '.github/workflows/lp001-schedule-eligibility-qa.yml'
   workflow_dispatch:
 
@@ -23,4 +25,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verify calendar-driven counselor listing eligibility
-        run: node --test tests/lp001-schedule-eligibility.test.cjs
+        run: node --test tests/lp001-schedule-eligibility.test.cjs tests/lp001-schedule-visibility.test.cjs
