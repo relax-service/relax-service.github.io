@@ -55,6 +55,38 @@
     });
   }
 
+  // Eligibility is based on calendar_slots, NOT week_slots (which is
+  // filtered by the LINE WORKS OFF action in v0.33).
+  function updateCalendarListingEligibility(data, now){
+    const helper=window.RelaxLpScheduleEligibility;
+    if(!helper || !helper.evaluate) return;
+    const result=helper.evaluate(data.calendar_slots, now, scheduleDays);
+    // Backend versions without calendar_slots are UNKNOWN: keep legacy
+    // display until the new independent Calendar API contract is deployed.
+    if(!result.known) return;
+    const card=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
+    if(!card) return;
+    card.hidden=!result.eligible;
+    if(result.eligible) card.style.removeProperty('display');
+    else card.style.display='none';
+
+    const container=card.closest('.counselors');
+    const section=container && container.closest('section');
+    if(!container || !section) return;
+    const anyVisible=[...container.querySelectorAll('.person')].some(node=>!node.hidden);
+    section.hidden=!anyVisible;
+    if(anyVisible) section.style.removeProperty('display');
+    else section.style.display='none';
+
+    // LP001 can have just one counselor; do not leave an anchor to
+    // a hidden counselor section or a purchasable ticket inside it.
+    document.querySelectorAll('a[href="#people"]').forEach(link=>{
+      link.hidden=!anyVisible;
+      if(anyVisible) link.style.removeProperty('display');
+      else link.style.display='none';
+    });
+  }
+
   function prioritizeRealtimeCard(online){
     const container=document.querySelector('.counselors');
     const realtimeCard=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
@@ -171,6 +203,7 @@
     if(!box||!label||!time||!week) return;
 
     const now=new Date();
+    updateCalendarListingEligibility(data, now);
     const rawUntil=parseIso(data.realtime_until || data.until);
     const online=!!data.online && (!rawUntil || Number.isNaN(rawUntil.getTime()) || rawUntil.getTime()>now.getTime());
     prioritizeRealtimeCard(online);
