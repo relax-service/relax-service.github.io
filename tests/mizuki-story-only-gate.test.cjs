@@ -21,6 +21,17 @@ test('only the published Mizuki story may apply this Calendar listing gate',()=>
  assert.doesNotMatch(eight,/schedule-eligibility\.js/);
 });
 
+test('tired visitor receives one primary action and accurate conditional price without added sections',()=>{
+ const fv=story.split('<header class="hero">')[1].split('</header>')[0];
+ assert.match(fv,/うまく話せなくても大丈夫。今の気持ちから話せます。/);
+ assert.match(fv,/初回30分 1,000円（対象の方）/);
+ assert.equal((fv.match(/<a\s+class="cta"/g)||[]).length,1);
+ assert.match(fv,/href="#people">話す人と料金を見る/);
+ assert.doesNotMatch(fv,/class="cta secondary"/);
+ // Existing complete eligibility terms remain available at purchase time.
+ assert.match(story,/この相談員をStripeで初めて購入する方が対象/);
+});
+
 test('story checkout section begins hidden and shows after live schedule qualification',()=>{
  assert.match(story,/<section class="section-soft" id="people" hidden style="display:none">/);
  assert.match(story,/<article class="person" data-counselor-id="0000-3" hidden style="display:none">/);
