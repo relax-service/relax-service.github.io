@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'tests/mizuki-live-readonly-smoke.cjs'
+      - 'tests/mizuki-live-browser-transport.cjs'
       - '.github/workflows/mizuki-live-readonly-smoke.yml'
   workflow_dispatch:
 
@@ -27,3 +28,8 @@ jobs:
         run: |
           node --check tests/mizuki-live-readonly-smoke.cjs
           node tests/mizuki-live-readonly-smoke.cjs
+      - name: Observe live cross-origin JSONP in smartphone-width Chromium (READ-ONLY)
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+          node tests/mizuki-live-browser-transport.cjs
