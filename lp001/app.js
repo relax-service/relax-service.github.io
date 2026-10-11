@@ -55,6 +55,42 @@
     });
   }
 
+  // The public eight-counselor LP must remain unchanged by this staged release.
+  const storyGateEnabled=/^\/story\/mizuki(?:\/|$)/.test(window.location.pathname);
+
+  function setCounselorCardEligible(eligible){
+    if(!storyGateEnabled) return;
+    const card=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
+    if(!card) return;
+    card.hidden=!eligible;
+    card.style.display=eligible ? '' : 'none';
+    const container=card.closest('.counselors');
+    const section=container && container.closest('section');
+    if(!container || !section) return;
+    const anyVisible=[...container.querySelectorAll('.person')].some(node=>!node.hidden);
+    section.hidden=!anyVisible;
+    section.style.display=anyVisible ? '' : 'none';
+    // On a single-counselor LP, never leave a clickable purchase CTA
+    // or an anchor to a counselor section without eligible slots.
+    document.querySelectorAll('a[href="#people"]').forEach(link=>{
+      link.hidden=!anyVisible;
+      link.style.display=anyVisible ? '' : 'none';
+    });
+  }
+
+  function updateCalendarListingEligibility(data, now){
+    if(!storyGateEnabled) return;
+    const helper=window.RelaxLpScheduleEligibility;
+    // Unknown/failed Calendar state != confirmed zero, but must not
+    // allow purchases while the schedule cannot be confirmed.
+    if(!helper || !helper.evaluate){
+      setCounselorCardEligible(false);
+      return;
+    }
+    const result=helper.evaluate(data.calendar_slots, now, scheduleDays);
+    setCounselorCardEligible(data.calendar_ok===true && result.known && result.eligible);
+  }
+
   function prioritizeRealtimeCard(online){
     const container=document.querySelector('.counselors');
     const realtimeCard=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
@@ -108,6 +144,7 @@
   }
 
   function renderFailure(){
+    if(storyGateEnabled) setCounselorCardEligible(false);
     const box=$('realtime-status-0000-3');
     const label=$('realtime-label-0000-3');
     const time=$('realtime-time-0000-3');
@@ -163,7 +200,10 @@
   }
 
   function render(data){
-    if(!data || data.consultant_no !== consultantNo) return;
+    if(!data || data.consultant_no !== consultantNo){
+      if(storyGateEnabled) setCounselorCardEligible(false);
+      return;
+    }
     const box=$('realtime-status-0000-3');
     const label=$('realtime-label-0000-3');
     const time=$('realtime-time-0000-3');
@@ -171,6 +211,7 @@
     if(!box||!label||!time||!week) return;
 
     const now=new Date();
+    if(storyGateEnabled) updateCalendarListingEligibility(data, now);
     const rawUntil=parseIso(data.realtime_until || data.until);
     const online=!!data.online && (!rawUntil || Number.isNaN(rawUntil.getTime()) || rawUntil.getTime()>now.getTime());
     prioritizeRealtimeCard(online);
@@ -255,13 +296,15 @@
       lastStatusData=data;
       render(data);
     }catch(e){
-      if(lastStatusData) render(lastStatusData);
+      if(storyGateEnabled) renderFailure();
+      else if(lastStatusData) render(lastStatusData);
       else renderFailure();
       console.warn('Realtime status load failed',e);
     }
   }
 
   applyLpConfig();
+  if(storyGateEnabled) setCounselorCardEligible(false);
   setupCounselorDisclosure();
   linkStaticSchedules();
   renderCustomerVoices();
@@ -270,7 +313,8 @@
   setInterval(refresh,60000);
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden){
-      if(lastStatusData) render(lastStatusData);
+      if(storyGateEnabled) setCounselorCardEligible(false);
+      else if(lastStatusData) render(lastStatusData);
       refresh();
     }
   });
