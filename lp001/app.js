@@ -55,6 +55,39 @@
     });
   }
 
+  // Eligibility is based on calendar_slots, NOT week_slots (which is
+  // filtered by the LINE WORKS OFF action in v0.33).
+  function setCounselorCardEligible(eligible){
+    const card=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
+    if(!card) return;
+    card.hidden=!eligible;
+    card.style.display=eligible ? '' : 'none';
+    const container=card.closest('.counselors');
+    const section=container && container.closest('section');
+    if(!container || !section) return;
+    const anyVisible=[...container.querySelectorAll('.person')].some(node=>!node.hidden);
+    section.hidden=!anyVisible;
+    section.style.display=anyVisible ? '' : 'none';
+    // On a single-counselor LP, never leave a clickable purchase CTA
+    // or an anchor to a counselor section without eligible slots.
+    document.querySelectorAll('a[href="#people"]').forEach(link=>{
+      link.hidden=!anyVisible;
+      link.style.display=anyVisible ? '' : 'none';
+    });
+  }
+
+  function updateCalendarListingEligibility(data, now){
+    const helper=window.RelaxLpScheduleEligibility;
+    // Unknown/failed Calendar state != confirmed zero, but must not
+    // allow purchases while the schedule cannot be confirmed.
+    if(!helper || !helper.evaluate){
+      setCounselorCardEligible(false);
+      return;
+    }
+    const result=helper.evaluate(data.calendar_slots, now, scheduleDays);
+    setCounselorCardEligible(data.calendar_ok===true && result.known && result.eligible);
+  }
+
   function prioritizeRealtimeCard(online){
     const container=document.querySelector('.counselors');
     const realtimeCard=document.querySelector(`.person[data-counselor-id="${consultantNo}"]`);
@@ -108,6 +141,7 @@
   }
 
   function renderFailure(){
+    setCounselorCardEligible(false);
     const box=$('realtime-status-0000-3');
     const label=$('realtime-label-0000-3');
     const time=$('realtime-time-0000-3');
@@ -163,7 +197,10 @@
   }
 
   function render(data){
-    if(!data || data.consultant_no !== consultantNo) return;
+    if(!data || data.consultant_no !== consultantNo){
+      setCounselorCardEligible(false);
+      return;
+    }
     const box=$('realtime-status-0000-3');
     const label=$('realtime-label-0000-3');
     const time=$('realtime-time-0000-3');
@@ -171,6 +208,7 @@
     if(!box||!label||!time||!week) return;
 
     const now=new Date();
+    updateCalendarListingEligibility(data, now);
     const rawUntil=parseIso(data.realtime_until || data.until);
     const online=!!data.online && (!rawUntil || Number.isNaN(rawUntil.getTime()) || rawUntil.getTime()>now.getTime());
     prioritizeRealtimeCard(online);
@@ -255,13 +293,15 @@
       lastStatusData=data;
       render(data);
     }catch(e){
-      if(lastStatusData) render(lastStatusData);
-      else renderFailure();
+      // The previous successful response may no longer represent current
+      // availability. Do not leave an old purchase path visible.
+      renderFailure();
       console.warn('Realtime status load failed',e);
     }
   }
 
   applyLpConfig();
+  setCounselorCardEligible(false);
   setupCounselorDisclosure();
   linkStaticSchedules();
   renderCustomerVoices();
@@ -270,7 +310,7 @@
   setInterval(refresh,60000);
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden){
-      if(lastStatusData) render(lastStatusData);
+      setCounselorCardEligible(false);
       refresh();
     }
   });

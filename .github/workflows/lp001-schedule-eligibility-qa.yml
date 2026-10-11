@@ -1,0 +1,28 @@
+name: LP001 schedule eligibility QA
+
+on:
+  pull_request:
+    paths:
+      - 'lp001/schedule-eligibility.js'
+      - 'lp001/app.js'
+      - 'lp001/index.html'
+      - 'story/mizuki/index.html'
+      - 'tests/lp001-schedule-eligibility.test.cjs'
+      - 'tests/lp001-schedule-visibility.test.cjs'
+      - 'tests/gas-v033-to-v034-calendar-slots.patch'
+      - '.github/workflows/lp001-schedule-eligibility-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify calendar-driven counselor listing eligibility
+        run: node --test tests/lp001-schedule-eligibility.test.cjs tests/lp001-schedule-visibility.test.cjs
