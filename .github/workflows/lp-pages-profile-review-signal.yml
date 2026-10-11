@@ -1,0 +1,81 @@
+name: Verified Pages LP release -> Kingdom profile review (OFF)
+
+# Successful Github Pages publish only, never an unverified git push.
+# Requires an enabled variable and a fine-grained Kingdom dispatch token.
+# Manual invocation is ALWAYS dry-run (no cross-repo dispatch).
+on:
+  workflow_run:
+    workflows:
+      - "pages build and deployment"
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verified-lp-signal:
+    if: >-
+      github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && vars.RELAX_LP_PROFILE_TRIGGER_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Collect only LP manifests/HTML affected by published commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git rev-parse 'HEAD^' >/dev/null 2>&1; then
+            git diff --name-only 'HEAD^' HEAD > "$RUNNER_TEMP/pages-changed-paths.txt"
+          else
+            git show --format='' --name-only HEAD > "$RUNNER_TEMP/pages-changed-paths.txt"
+          fi
+          python3 - "$RUNNER_TEMP/pages-changed-paths.txt" "$RUNNER_TEMP/changed.json" <<'PY'
+          import json,sys
+          paths=open(sys.argv[1],encoding='utf-8').read().splitlines()
+          with open(sys.argv[2],'w',encoding='utf-8') as out:
+              json.dump(paths,out)
+          PY
+          PAGES_CHANGED_PATHS="$RUNNER_TEMP/changed.json" \
+          PAGES_RELEASE_SHA="$(git rev-parse HEAD)" \
+          PAGES_RELEASE_QUEUE="$RUNNER_TEMP/private-releases.json" \
+          node scripts/lp-release-profile-signal.cjs
+      - name: Inform Kingdom only for changed and publicly verified LP manifests
+        if: >-
+          github.event_name == 'workflow_run' && vars.RELAX_LP_PROFILE_TRIGGER_ENABLED == 'true'
+        shell: bash
+        env:
+          KINGDOM_DISPATCH_TOKEN: ${{ secrets.KINGDOM_LP_REVIEW_DISPATCH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KINGDOM_DISPATCH_TOKEN" ]; then
+            echo 'REVIEW_TRIGGER_DISABLED_MISSING_DISPATCH_CREDENTIAL: NO_SEND'
+            exit 1
+          fi
+          python3 - "$RUNNER_TEMP/private-releases.json" "$RUNNER_TEMP/private-dispatch.json" <<'PY'
+          import json,sys
+          releases=json.load(open(sys.argv[1],encoding='utf-8')).get('releases',[])
+          if not releases:
+              print('NO_SCENARIO_CHANGES_NO_DISPATCH')
+              sys.exit(0)
+          payload={'event_type':'relax_lp_release_verified',
+                   'client_payload':{'releases':releases}}
+          with open(sys.argv[2],'w',encoding='utf-8') as f:
+              json.dump(payload,f,ensure_ascii=False)
+          PY
+          if [ ! -s "$RUNNER_TEMP/private-dispatch.json" ]; then
+            exit 0
+          fi
+          curl --fail --silent --show-error --request POST \
+            --header 'Accept: application/vnd.github+json' \
+            --header "Authorization: Bearer $KINGDOM_DISPATCH_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data-binary @"$RUNNER_TEMP/private-dispatch.json" \
+            'https://api.github.com/repos/hiyaguchi/Kingdom/dispatches'
+          echo 'PROFILE_FIT_REVIEW_EVENT_QUEUED_NO_STAFF_SEND'
