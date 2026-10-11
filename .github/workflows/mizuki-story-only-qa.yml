@@ -1,0 +1,27 @@
+name: Mizuki published story schedule-gate QA
+on:
+  pull_request:
+    paths:
+      - 'story/mizuki/index.html'
+      - 'lp001/app.js'
+      - 'lp001/schedule-eligibility.js'
+      - 'tests/mizuki-story-only-gate.test.cjs'
+      - '.github/workflows/mizuki-story-only-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  single-story-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Script syntax, story-only scope and purchase links
+        run: |
+          node --check lp001/app.js
+          node --check lp001/schedule-eligibility.js
+          node --test tests/mizuki-story-only-gate.test.cjs
