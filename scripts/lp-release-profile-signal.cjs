@@ -49,6 +49,14 @@ async function buildReleaseSignals(manifests,changed,sha,fetchHtml){
  const releases=[];
  for(const entry of manifests){
    if(!changed.includes(entry.manifest.source_html_path)&&!changed.includes(entry.path))continue;
+   // Validate target origin/path BEFORE any network request to avoid SSRF.
+   const target=new URL(entry.manifest.published_url);
+   assert.equal(target.protocol,'https:');
+   assert.equal(target.hostname,'relax-service.github.io');
+   assert.ok(/^\/story\/[a-z0-9-]+\/$/.test(target.pathname));
+   assert.equal(target.username,'');
+   assert.equal(target.password,'');
+   assert.equal(target.port,'');
    const html=await fetchHtml(entry.manifest.published_url);
    releases.push(verifiedManifest(entry.manifest,sha,changed,html));
  }
