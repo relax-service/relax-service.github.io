@@ -1,0 +1,29 @@
+name: Mizuki LIVE production transport smoke (read-only)
+
+# No writes to GAS, calendar, LINE WORKS, Stripe, LP, or GitHub main.
+# Test live anonymous GET for both JSON and JSONP before any release.
+on:
+  pull_request:
+    paths:
+      - 'tests/mizuki-live-readonly-smoke.cjs'
+      - '.github/workflows/mizuki-live-readonly-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-anonymous-get-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect public site+GAS via anonymous GET only (no purchase)
+        env:
+          PROBE_TIMEOUT_MS: '45000'
+        run: |
+          node --check tests/mizuki-live-readonly-smoke.cjs
+          node tests/mizuki-live-readonly-smoke.cjs
