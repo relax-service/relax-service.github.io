@@ -1,0 +1,38 @@
+name: LP release event contract (never send or publish)
+on:
+  pull_request:
+    paths:
+      - 'scripts/lp-release-profile-signal.cjs'
+      - 'tests/lp-release-profile-signal.test.cjs'
+      - '.github/workflows/lp-pages-profile-review-signal.yml'
+      - '.github/workflows/lp-profile-release-trigger-qa.yml'
+
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JS syntax and read-only release signal behavior
+        run: |
+          node --check scripts/lp-release-profile-signal.cjs
+          node --test tests/lp-release-profile-signal.test.cjs
+      - name: Ensure external dispatch is OFF and cannot publish or email
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const assert=require('node:assert/strict');
+          const y=fs.readFileSync('.github/workflows/lp-pages-profile-review-signal.yml','utf8');
+          assert.match(y,/RELAX_LP_PROFILE_TRIGGER_ENABLED/);
+          assert.match(y,/KINGDOM_LP_REVIEW_DISPATCH_TOKEN/);
+          assert.match(y,/workflow_run:/);
+          assert.match(y,/pages build and deployment/);
+          assert.doesNotMatch(y,/^\s*push:/m);
+          assert.doesNotMatch(y,/^\s*schedule:/m);
+          assert.doesNotMatch(y,/smtp|send-mail|webhook\.stripe|clasp push/i);
+          console.log('LP_RELEASE_TRIGGER_DRAFT_ONLY_NO_CUSTOMER_WRITES');
+          NODE
