@@ -49,13 +49,22 @@ const {chromium}=require('playwright');
      const ctas=[...document.querySelectorAll('a[href="#people"]')];
      const label=document.getElementById('realtime-label-0000-3');
      return {
-       card:visible(card),section:visible(section),form:visible(form),
+       card:visible(card),eligible:!!card&&!card.hidden&&card.style.display!=='none',
+       section:visible(section),form:visible(form),
        links:links.map(visible),count:links.length,
        ctas:ctas.map(visible),status:label?.textContent||'',
        urls:links.map(x=>x.href)
      };
    });
-   assert.equal(result.card,shouldShow,label+': counselor');
+   assert.equal(pathname.startsWith('/story/')?result.card:result.eligible,
+       shouldShow,label+': counselor listing qualification');
+   if(pathname==='/lp001/' && shouldShow && !result.card){
+     const more=page.locator('.more-counselors-toggle');
+     assert.ok(await more.count()>0,label+': existing eight-person show-more absent');
+     await more.click();
+     assert.equal(await page.locator('.person[data-counselor-id="0000-3"]').isVisible(),true,
+       label+': legacy card fails to open when expanding');
+   }
    if(pathname.startsWith('/story/')){
      assert.equal(result.section,shouldShow,label+': story section');
      assert.equal(result.form,shouldShow,label+': initial checkout');
