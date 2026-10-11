@@ -43,8 +43,9 @@ const {chromium}=require('playwright');
      const section=document.getElementById('people');
      const form=document.getElementById('initial-ticket-form');
      const links=[...document.querySelectorAll('.ticket-options a[href]')];
-     const visible=el=>!!el&&!el.hidden&&el.style.display!=='none'&&
-       getComputedStyle(el).display!=='none';
+     // Include ancestor visibility: child <form> may have display:block
+     // even when its entire counselor <section> is display:none.
+     const visible=el=>!!el&&el.getClientRects().length>0;
      const ctas=[...document.querySelectorAll('a[href="#people"]')];
      const label=document.getElementById('realtime-label-0000-3');
      return {
