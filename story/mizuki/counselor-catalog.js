@@ -30,6 +30,40 @@
     try{var u=new URL(raw);return u.protocol==='https:'&&u.hostname==='www.relax-s.com'
       &&/^\/(counselor|supporter|fortuneteller)\.html$/.test(u.pathname)?u.href:'';}catch(e){return '';}
   }
+  function stripeMenu(person){
+    if(!Array.isArray(person.tickets)||person.tickets.length!==3)return null;
+    var seen=new Set(),links=new Set(),valid=true;
+    var tickets=person.tickets.map(function(t){
+      if(!t||![30,60,90].includes(t.durationMinutes)||seen.has(t.durationMinutes)||
+        t.amountJpy!==t.durationMinutes*person.minutePrice){valid=false;return null;}
+      var link=linkAllowed(t.checkoutUrl,'stripe');
+      if(!link){valid=false;return null;}
+      var u=new URL(link),refs=u.searchParams.getAll('client_reference_id');
+      if(u.port||u.hash||!/^\/[A-Za-z0-9]+$/.test(u.pathname)||links.has(u.pathname)||
+        Array.from(u.searchParams.keys()).some(function(k){return k!=='client_reference_id';})||
+        refs.length!==1||!new RegExp('^'+person.consultantNo+'_[A-Za-z0-9_-]{1,64}$').test(refs[0])){
+        valid=false;return null;
+      }
+      seen.add(t.durationMinutes);links.add(u.pathname);
+      return {duration:t.durationMinutes,amount:t.amountJpy,url:link};
+    });
+    if(!valid)return null;
+    return tickets.sort(function(a,b){return a.duration-b.duration;});
+  }
+  function initialOffer(person){
+    var offer=person.initialOffer;
+    if(!offer)return null;
+    if(offer.durationMinutes!==30||!Number.isInteger(offer.amountJpy)||offer.amountJpy<1)return null;
+    try{
+      var u=new URL(offer.eligibilityUrl);
+      if(u.protocol!=='https:'||u.hostname!=='script.google.com'||u.port||u.hash||u.username||u.password||
+        !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname)||
+        u.searchParams.get('action')!=='promo'||u.searchParams.get('consultant_no')!==person.consultantNo||
+        !/^[A-Za-z0-9_-]{1,64}$/.test(u.searchParams.get('lp_id')||'')||
+        Array.from(u.searchParams.keys()).sort().join(',')!=='action,consultant_no,lp_id')return null;
+      return {url:u.href,amount:offer.amountJpy};
+    }catch(e){return null;}
+  }
   function mediaAllowed(src,type){
     if(typeof src!=='string')return '';
     var pattern=type==='image'? /^\/assets\/images\/[A-Za-z0-9_-]+\.(?:png|jpg|jpeg|webp)$/i
@@ -74,10 +108,14 @@
     if(!/^[0-9]{2,8}(?:-[0-9]{1,6})?$/.test(person.consultantNo))return null;
     if(!person.displayName || typeof person.displayName!=='string'||person.displayName.length>100)return null;
     var checkout=linkAllowed(person.checkoutUrl,person.checkoutProvider);
+    var menu=person.checkoutProvider==='stripe'?stripeMenu(person):null;
+    var initial=person.checkoutProvider==='stripe'?initialOffer(person):null;
     var profile=profileAllowed(person.profileUrl);
     var photo=mediaAllowed(person.imagePath,'image'),voice=mediaAllowed(person.audioPath,'audio');
     var rate=person.minutePrice;
-    if(!checkout||!profile||!photo||!voice||!Number.isInteger(rate)||rate<1||rate>10000)return null;
+    if((person.checkoutProvider==='stripe'?!menu:!checkout)||!profile||!photo||
+      (person.audioPath&&!voice)||!Number.isInteger(rate)||rate<1||rate>10000||
+      (person.initialOffer&&!initial))return null;
     var slots=safeSlots(person,now);
     if(!slots.length)return null; // No verified future slot; no purchasing.
     var card=element('article','person');
@@ -91,11 +129,11 @@
     appendText(identity,'div','meta',String(person.roleLabel||'話し手').slice(0,100));
     top.appendChild(identity);card.appendChild(top);
     appendText(card,'p','one-line',String(person.intro||'').slice(0,180));
-    var audioBlock=element('div','voice-sample');
+    if(voice){var audioBlock=element('div','voice-sample');
     appendText(audioBlock,'div','voice-native-label','声を聞く');
     var audio=element('audio','voice-native-audio');
     audio.controls=true;audio.playsInline=true;audio.preload='none';audio.src=voice;
-    audioBlock.appendChild(audio);card.appendChild(audioBlock);
+    audioBlock.appendChild(audio);card.appendChild(audioBlock);}
     var schedule=element('div','schedule');
     var title=element('div','schedule-head');appendText(title,'b','','待機予定');schedule.appendChild(title);
     var ul=element('ul','schedule-list');
@@ -106,8 +144,19 @@
     var purchase=element('div','purchase-block');
     appendText(purchase,'div','purchase-label','お話する時間を選ぶ');
     appendText(purchase,'p','purchase-note','料金：1分'+rate.toLocaleString('ja-JP')+'円（30分'+(rate*30).toLocaleString('ja-JP')+'円）');
-    var action=appendText(purchase,'a','cta',person.checkoutProvider==='stores'?'STORESでチケットを選ぶ':'Stripeでチケットを選ぶ');
-    action.href=checkout;action.target='_blank';action.rel='noopener noreferrer';
+    if(menu){
+      menu.forEach(function(t){
+        var action=appendText(purchase,'a','cta',t.duration+'分 '+t.amount.toLocaleString('ja-JP')+'円');
+        action.href=t.url;action.target='_blank';action.rel='noopener noreferrer';
+      });
+      if(initial){
+        var gate=appendText(purchase,'a','profile-link','初回30分 '+initial.amount.toLocaleString('ja-JP')+'円の対象確認へ');
+        gate.href=initial.url;gate.target='_blank';gate.rel='noopener noreferrer';
+      }
+    }else{
+      var action=appendText(purchase,'a','cta','STORESでチケットを選ぶ');
+      action.href=checkout;action.target='_blank';action.rel='noopener noreferrer';
+    }
     appendText(purchase,'p','purchase-note','料金と利用条件は、購入画面でご確認ください。');
     card.appendChild(purchase);
     return card;
@@ -164,3 +213,4 @@
   window.setInterval(refresh,60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh();});
 })();
+

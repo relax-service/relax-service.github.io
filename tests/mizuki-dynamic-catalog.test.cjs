@@ -59,6 +59,8 @@ function person(id,name,provider,link){
    imagePath:'/assets/images/ohira.png',audioPath:'/assets/audio/ohira.mp3',
    profileUrl:'https://www.relax-s.com/counselor.html',
    minutePrice:150,checkoutProvider:provider,checkoutUrl:link,
+   tickets:provider==='stripe'?[30,60,90].map(d=>({durationMinutes:d,amountJpy:d*150,
+     checkoutUrl:'https://buy.stripe.com/qa'+id.replace(/-/g,'')+d+'?client_reference_id='+id+'_LP001'})):[],
    slots:[{start:new Date(Date.now()+60000).toISOString(),end:new Date(Date.now()+3600000).toISOString()}]
  };
 }
@@ -84,6 +86,29 @@ const dynamic=()=>container.children.filter(x=>x.dataset.catalogGenerated==='tru
  assert.equal(dynamic().length,2,'3rd member added by data only; no code changes');
  assert.deepEqual(dynamic().map(x=>x.dataset.counselorId),['0099','0111']);
  assert.equal(container.children[0],umetsu);
+ function descendants(node){return node.children.flatMap(x=>[x,...descendants(x)]);}
+ let thirdCard=dynamic().find(x=>x.dataset.counselorId==='0111');
+ let buttons=descendants(thirdCard).filter(x=>x.className==='cta');
+ assert.deepEqual(buttons.map(x=>x.textContent),['30分 4,500円','60分 9,000円','90分 13,500円']);
+ assert.ok(buttons.every(x=>x.href.includes('client_reference_id=0111_LP001')));
+ for(const bad of ['https://buy.stripe.com/test_bad?client_reference_id=0111_LP001',
+   'https://buy.stripe.com/qa?client_reference_id=0099_LP001',
+   'https://buy.stripe.com/qa?client_reference_id=0111_LP001&client_reference_id=0099_LP001',
+   'https://buy.stripe.com/qa?client_reference_id=0111_LP001&prefilled_promo_code=BAD']){
+   const copy=JSON.parse(JSON.stringify(third));copy.tickets[0].checkoutUrl=bad;
+   payload=asData([copy]);nextRefresh();await settle();assert.equal(dynamic().length,0);
+ }
+ const initial=JSON.parse(JSON.stringify(third));initial.initialOffer={durationMinutes:30,amountJpy:1000,
+   eligibilityUrl:'https://script.google.com/macros/s/QASyntheticGate/exec?action=promo&consultant_no=0111&lp_id=LP001'};
+ payload=asData([initial]);nextRefresh();await settle();
+ assert.equal(dynamic().length,1);
+ assert.ok(descendants(dynamic()[0]).some(x=>x.textContent==='初回30分 1,000円の対象確認へ'));
+ initial.initialOffer.eligibilityUrl='https://buy.stripe.com/unguardedInitial';
+ payload=asData([initial]);nextRefresh();await settle();assert.equal(dynamic().length,0);
+ const noMenu=JSON.parse(JSON.stringify(third));delete noMenu.tickets;
+ payload=asData([noMenu]);nextRefresh();await settle();assert.equal(dynamic().length,0,'single generic stripe link rejected');
+ const noVoice=JSON.parse(JSON.stringify(third));noVoice.audioPath='';
+ payload=asData([noVoice]);nextRefresh();await settle();assert.equal(dynamic().length,1,'optional audio');
 
  const evil=person('0133','悪意ある変更','stores','https://relax-s.stores.jp.evil.com/x');
  payload=asData([ohira,third,evil]);nextRefresh();await settle();
@@ -106,3 +131,4 @@ const dynamic=()=>container.children.filter(x=>x.dataset.catalogGenerated==='tru
  assert.equal(dynamic().length,1,'fresh recovery');
  console.log('MIZUKI_DYNAMIC_CATALOG_QA_PASS: zero-code third member, rejected false payments, no-slot stop, recovery; legacy Umetsu untouched');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
