@@ -1,0 +1,29 @@
+name: Mizuki Oohira STORES (static QA only)
+
+# This workflow reads repository files only. It never deploys or performs purchases.
+on:
+  pull_request:
+    paths:
+      - 'story/mizuki/index.html'
+      - 'story/mizuki/ohira-schedule.js'
+      - 'tests/mizuki-ohira-stores-snapshot.cjs'
+      - '.github/workflows/mizuki-ohira-stores-pr-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-snapshot-when-proposed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and deterministic markup/time/checkout QA (no network)
+        run: |
+          node --check story/mizuki/ohira-schedule.js
+          node --check tests/mizuki-ohira-stores-snapshot.cjs
+          node tests/mizuki-ohira-stores-snapshot.cjs
