@@ -1,0 +1,166 @@
+/**
+ * Dynamic counselor cards for the published Mizuki page.
+ * Fully data-driven; no counselor-specific code or calendar identifiers.
+ * Existing Umetsu legacy card and its Stripe/LINE WORKS state are untouched.
+ * No purchase requests or form submission occur here.
+ */
+(function () {
+  'use strict';
+  var cfg=(window.LP_CONFIG && window.LP_CONFIG.catalog)||{};
+  var url=String(cfg.statusUrl||'');
+  var segment=String(cfg.segment||'mizuki');
+  var container=document.querySelector('#people .counselors');
+  var status=document.getElementById('dynamic-catalog-status');
+  if(!container||!status||!url)return; // Not wired to QA/public GAS yet: no false cards.
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url))return;
+  if(!/^[a-z0-9_-]{1,32}$/.test(segment))return;
+  var requestId=0;
+
+  function linkAllowed(raw,provider){
+    if(typeof raw!=='string')return '';
+    try {
+      var u=new URL(raw);
+      if(u.protocol!=='https:'||u.username||u.password)return '';
+      if(provider==='stores' && u.hostname==='relax-s.stores.jp')return u.href;
+      if(provider==='stripe' && u.hostname==='buy.stripe.com' && !u.pathname.startsWith('/test_'))return u.href;
+    }catch(e){}
+    return '';
+  }
+  function profileAllowed(raw){
+    try{var u=new URL(raw);return u.protocol==='https:'&&u.hostname==='www.relax-s.com'
+      &&/^\/(counselor|supporter|fortuneteller)\.html$/.test(u.pathname)?u.href:'';}catch(e){return '';}
+  }
+  function mediaAllowed(src,type){
+    if(typeof src!=='string')return '';
+    var pattern=type==='image'? /^\/assets\/images\/[A-Za-z0-9_-]+\.(?:png|jpg|jpeg|webp)$/i
+      : /^\/assets\/audio\/[A-Za-z0-9_-]+\.mp3$/;
+    return pattern.test(src)?src:'';
+  }
+  function element(tag,cls,text){
+    var node=document.createElement(tag);
+    if(cls)node.className=cls;
+    if(text!==undefined)node.textContent=text;
+    return node;
+  }
+  function appendText(parent,tag,cls,text){var n=element(tag,cls,text);parent.appendChild(n);return n;}
+  function safeSlots(person,now){
+    if(!Array.isArray(person.slots))return [];
+    return person.slots.map(function(slot){
+      if(!slot||typeof slot.start!=='string'||typeof slot.end!=='string')return null;
+      var start=Date.parse(slot.start),end=Date.parse(slot.end);
+      if(!Number.isFinite(start)||!Number.isFinite(end)||end<=now||end<=start||start>now+60*86400000)return null;
+      return {start:new Date(start),end:new Date(end)};
+    }).filter(Boolean).sort(function(a,b){return a.start-b.start;}).slice(0,12);
+  }
+  function dayLabel(dt){
+    return new Intl.DateTimeFormat('ja-JP',{
+      timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',weekday:'short'
+    }).format(dt);
+  }
+  function timeLabel(dt){
+    return new Intl.DateTimeFormat('ja-JP',{
+      timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hour12:false,hourCycle:'h23'
+    }).format(dt);
+  }
+  function dayKey(dt){
+    return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(dt);
+  }
+  function slotLabel(slot){
+    var same=dayKey(slot.start)===dayKey(slot.end);
+    return dayLabel(slot.start)+' '+timeLabel(slot.start)+'〜'+(same?'':'翌')+timeLabel(slot.end);
+  }
+  function build(person,now){
+    if(!person||typeof person!=='object'||typeof person.consultantNo!=='string')return null;
+    if(!/^[0-9]{2,8}(?:-[0-9]{1,6})?$/.test(person.consultantNo))return null;
+    if(!person.displayName || typeof person.displayName!=='string'||person.displayName.length>100)return null;
+    var checkout=linkAllowed(person.checkoutUrl,person.checkoutProvider);
+    var profile=profileAllowed(person.profileUrl);
+    var photo=mediaAllowed(person.imagePath,'image'),voice=mediaAllowed(person.audioPath,'audio');
+    var rate=person.minutePrice;
+    if(!checkout||!profile||!photo||!voice||!Number.isInteger(rate)||rate<1||rate>10000)return null;
+    var slots=safeSlots(person,now);
+    if(!slots.length)return null; // No verified future slot; no purchasing.
+    var card=element('article','person');
+    card.dataset.counselorId=person.consultantNo;
+    card.setAttribute('data-catalog-generated','true');
+    var top=element('div','person-top'),avatar=element('div','avatar');
+    var image=element('img');image.src=photo;image.alt=person.displayName;image.loading='lazy';
+    avatar.appendChild(image);top.appendChild(avatar);
+    var identity=element('div');
+    appendText(identity,'div','person-name',person.displayName);
+    appendText(identity,'div','meta',String(person.roleLabel||'話し手').slice(0,100));
+    top.appendChild(identity);card.appendChild(top);
+    appendText(card,'p','one-line',String(person.intro||'').slice(0,180));
+    var audioBlock=element('div','voice-sample');
+    appendText(audioBlock,'div','voice-native-label','声を聞く');
+    var audio=element('audio','voice-native-audio');
+    audio.controls=true;audio.playsInline=true;audio.preload='none';audio.src=voice;
+    audioBlock.appendChild(audio);card.appendChild(audioBlock);
+    var schedule=element('div','schedule');
+    var title=element('div','schedule-head');appendText(title,'b','','待機予定');schedule.appendChild(title);
+    var ul=element('ul','schedule-list');
+    slots.forEach(function(s){appendText(ul,'li','',slotLabel(s));});
+    schedule.appendChild(ul);card.appendChild(schedule);
+    var more=appendText(card,'a','profile-link','詳しいプロフィール');
+    more.href=profile;more.target='_blank';more.rel='noopener noreferrer';
+    var purchase=element('div','purchase-block');
+    appendText(purchase,'div','purchase-label','お話する時間を選ぶ');
+    appendText(purchase,'p','purchase-note','料金：1分'+rate.toLocaleString('ja-JP')+'円（30分'+(rate*30).toLocaleString('ja-JP')+'円）');
+    var action=appendText(purchase,'a','cta',person.checkoutProvider==='stores'?'STORESでチケットを選ぶ':'Stripeでチケットを選ぶ');
+    action.href=checkout;action.target='_blank';action.rel='noopener noreferrer';
+    appendText(purchase,'p','purchase-note','料金と利用条件は、購入画面でご確認ください。');
+    card.appendChild(purchase);
+    return card;
+  }
+  function clearDynamic(){
+    container.querySelectorAll('[data-catalog-generated="true"]').forEach(function(n){n.remove();});
+  }
+  function render(data){
+    var now=Date.now();
+    clearDynamic();
+    if(!data||data.schema!=='relax-public-catalog-v1'||data.ok!==true||data.segment!==segment
+      ||!Array.isArray(data.counselors)||data.counselors.length>100
+      ||!Number.isFinite(Date.parse(data.refreshedAt))
+      ||Math.abs(now-Date.parse(data.refreshedAt))>5*60000){
+      status.textContent='ほかの話し手の予定を取得できません。時間をおいてお試しください。';
+      return;
+    }
+    var seen=new Set(Array.from(container.querySelectorAll('.person[data-counselor-id]'))
+      .map(function(c){return c.dataset.counselorId;}));
+    var fragment=document.createDocumentFragment(),added=0;
+    data.counselors.forEach(function(p){
+      if(!p||seen.has(p.consultantNo))return;
+      var card=build(p,now);
+      if(card){seen.add(p.consultantNo);fragment.appendChild(card);added++;}
+    });
+    container.appendChild(fragment);
+    status.textContent=added?'':'現在、ほかの話し手の待機予定はありません。';
+  }
+  function jsonp(){
+    return new Promise(function(resolve,reject){
+      var cb='__relaxCatalog_'+Date.now()+'_'+Math.random().toString(36).slice(2).replace(/[^a-z0-9]/g,'');
+      var tag=document.createElement('script'),done=false;
+      var timeout=setTimeout(function(){finish(new Error('timeout'));},8000);
+      function finish(error,data){
+        if(done)return;done=true;
+        clearTimeout(timeout);try{delete window[cb];}catch(ignore){}
+        tag.remove();
+        if(error)reject(error);else resolve(data);
+      }
+      window[cb]=function(payload){finish(null,payload);};
+      tag.onerror=function(){finish(new Error('unavailable'));};
+      tag.src=url+'?action=catalog&segment='+encodeURIComponent(segment)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
+      document.head.appendChild(tag);
+    });
+  }
+  function refresh(){
+    var seq=++requestId;
+    jsonp().then(function(data){if(seq===requestId)render(data);},function(){
+      if(seq!==requestId)return;
+      clearDynamic();status.textContent='ほかの話し手の予定を取得できません。時間をおいてお試しください。';
+    });
+  }
+  refresh();
+  window.setInterval(refresh,60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh();});
+})();
