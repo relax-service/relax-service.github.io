@@ -1,0 +1,28 @@
+name: Mizuki dynamic counselor catalog isolated QA
+on:
+  pull_request:
+    paths:
+      - 'story/mizuki/index.html'
+      - 'story/mizuki/counselor-catalog.js'
+      - 'lp001/lp-config.js'
+      - 'tests/mizuki-dynamic-catalog.test.cjs'
+      - '.github/workflows/mizuki-dynamic-catalog-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-no-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate no per-consultant code edits and safe payment routing (mock only)
+        run: |
+          node --check story/mizuki/counselor-catalog.js
+          node --check tests/mizuki-dynamic-catalog.test.cjs
+          node tests/mizuki-dynamic-catalog.test.cjs
