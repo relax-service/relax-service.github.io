@@ -15,6 +15,8 @@
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url))return;
   if(!/^[a-z0-9_-]{1,32}$/.test(segment))return;
   var requestId=0;
+  var rendered=null,expiryTimer=null;
+  var maxAge=5*60000;
 
   function linkAllowed(raw,provider){
     if(typeof raw!=='string')return '';
@@ -164,26 +166,40 @@
   function clearDynamic(){
     container.querySelectorAll('[data-catalog-generated="true"]').forEach(function(n){n.remove();});
   }
-  function render(data){
-    var now=Date.now();
+  function forgetDynamic(){
+    clearTimeout(expiryTimer);expiryTimer=null;rendered=null;
     clearDynamic();
+  }
+  function render(data,deadline){
+    var now=Date.now();
+    forgetDynamic();
     if(!data||data.schema!=='relax-public-catalog-v1'||data.ok!==true||data.segment!==segment
       ||!Array.isArray(data.counselors)||data.counselors.length>100
       ||!Number.isFinite(Date.parse(data.refreshedAt))
-      ||Math.abs(now-Date.parse(data.refreshedAt))>5*60000){
+      ||Math.abs(now-Date.parse(data.refreshedAt))>=maxAge
+      ||(deadline!==undefined&&deadline<=now)){
       status.textContent='ほかの話し手の予定を取得できません。時間をおいてお試しください。';
       return;
     }
+    // A pending request must not extend the life of an older snapshot.
+    // Retain this deadline on timer/visibility rechecks, including clock skew.
+    deadline=deadline===undefined?Math.min(now+maxAge,Date.parse(data.refreshedAt)+maxAge):deadline;
+    rendered={data:data,deadline:deadline};
+    var nextExpiry=deadline;
     var seen=new Set(Array.from(container.querySelectorAll('.person[data-counselor-id]'))
       .map(function(c){return c.dataset.counselorId;}));
     var fragment=document.createDocumentFragment(),added=0;
     data.counselors.forEach(function(p){
       if(!p||seen.has(p.consultantNo))return;
       var card=build(p,now);
-      if(card){seen.add(p.consultantNo);fragment.appendChild(card);added++;}
+      if(card){seen.add(p.consultantNo);fragment.appendChild(card);added++;
+        safeSlots(p,now).forEach(function(s){nextExpiry=Math.min(nextExpiry,s.end.getTime());});
+      }
     });
     container.appendChild(fragment);
     status.textContent=added?'':'現在、ほかの話し手の待機予定はありません。';
+    // Expire ended slots and stale purchasing even without a network response.
+    expiryTimer=setTimeout(function(){render(data,deadline);},Math.max(1,nextExpiry-now));
   }
   function jsonp(){
     return new Promise(function(resolve,reject){
@@ -206,11 +222,14 @@
     var seq=++requestId;
     jsonp().then(function(data){if(seq===requestId)render(data);},function(){
       if(seq!==requestId)return;
-      clearDynamic();status.textContent='ほかの話し手の予定を取得できません。時間をおいてお試しください。';
+      forgetDynamic();status.textContent='ほかの話し手の予定を取得できません。時間をおいてお試しください。';
     });
   }
   refresh();
   window.setInterval(refresh,60000);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh();});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden){
+    if(rendered)render(rendered.data,rendered.deadline);
+    refresh();
+  }});
 })();
 

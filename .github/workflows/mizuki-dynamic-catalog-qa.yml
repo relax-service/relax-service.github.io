@@ -6,6 +6,7 @@ on:
       - 'story/mizuki/counselor-catalog.js'
       - 'lp001/lp-config.js'
       - 'tests/mizuki-dynamic-catalog.test.cjs'
+      - 'tests/mizuki-catalog-expiry.test.cjs'
       - '.github/workflows/mizuki-dynamic-catalog-qa.yml'
   workflow_dispatch:
 
@@ -26,3 +27,4 @@ jobs:
           node --check story/mizuki/counselor-catalog.js
           node --check tests/mizuki-dynamic-catalog.test.cjs
           node tests/mizuki-dynamic-catalog.test.cjs
+          node tests/mizuki-catalog-expiry.test.cjs
