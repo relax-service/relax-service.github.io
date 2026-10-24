@@ -17,7 +17,7 @@ function fixture(query='?session_id=cs_test_QAOnly123',withAnalytics=true){
   querySelector(s){if(s==='a.phone-call'&&this.innerHTML.includes('phone-call'))return element('phone-link');return null;}});
  const bridge=element('bridge');Object.defineProperty(bridge,'src',{set:v=>requests.push(v)});
  const document={getElementById:element,head:{appendChild:n=>requests.push(n.src)},createElement:()=>({}),addEventListener:(k,fn)=>listeners['document:'+k]=fn};
- const window={addEventListener:(k,fn)=>listeners[k]=fn};if(withAnalytics)window.gtag=(...args)=>events.push(args);
+ const window={RELAX_PURCHASE_BRIDGE_CONFIG:{mode:'legacy',endpointUrl:''},addEventListener:(k,fn)=>listeners[k]=fn};if(withAnalytics)window.gtag=(...args)=>events.push(args);
  const ctx={document,window,URL,URLSearchParams,location:{search:query,origin:'https://relax-service.github.io',pathname:'/story/purchase-success/'},
  localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},Date,Number,console,
  setTimeout:fn=>{timers.set(++serial,fn);return serial;},clearTimeout:id=>timers.delete(id)};

@@ -57,6 +57,8 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 <iframe id="bridge" class="bridge" title="決済確認" aria-hidden="true"></iframe>
 </main>
 
+<script src="/assets/js/purchase-bridge-config.js?v=20261024a"></script>
+<script src="/assets/js/purchase-bridge-session.js?v=20261024a"></script>
 <script>
 (function(){
   "use strict";
@@ -72,6 +74,10 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   let timer=null;
   let awaiting=false;
   let completed=false;
+  let sessionGate=null;
+  const config=window.RELAX_PURCHASE_BRIDGE_CONFIG;
+  const mode=config&&config.mode;
+  const errorText="確認できませんでした。決済をやり直さず、時間をおいてもう一度確認してください。";
 
   function trustedOrigin(origin){
     try{
@@ -117,6 +123,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 
   function showError(message){
     clearTimeout(timer);
+    if(sessionGate)sessionGate.cancel();
     awaiting=false;
     loading.hidden=true;
     success.hidden=true;
@@ -224,26 +231,51 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
       return;
     }
 
+    let endpoint=GAS_URL,request;
+    try{
+      if(mode==="v2"){
+        endpoint=config.endpointUrl;
+        // Static configuration pins the exact reviewed deployment. No URL or
+        // message override, query parameters, or fallback to the side-effectful
+        // legacy handler is allowed when v2 cannot be used.
+        if(typeof endpoint!=="string"||endpoint===GAS_URL||
+          !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)||
+          typeof window.RelaxPurchaseBridgeSession!=="function")throw Error("V2_NOT_READY");
+        if(!sessionGate)sessionGate=window.RelaxPurchaseBridgeSession({sessionId:sessionId,parentOrigin:location.origin});
+        request=sessionGate.begin();
+      }else if(mode==="legacy"){
+        request={action:"success_bridge",session_id:sessionId,parent_origin:location.origin};
+      }else{
+        throw Error("CONFIG_REQUIRED");
+      }
+    }catch(_){showError(errorText);return;}
+
     loading.hidden=false;
     success.hidden=true;
     error.style.display="none";
     awaiting=true;
-
-    const q=new URLSearchParams({
-      action:"success_bridge",
-      session_id:sessionId,
-      parent_origin:location.origin
-    });
-
-    bridge.src=GAS_URL+"?"+q.toString()+"&_="+Date.now();
+    const q=new URLSearchParams(request);
 
     clearTimeout(timer);
     timer=setTimeout(function(){
       showError("確認に時間がかかっています。もう一度確認してください。");
     },20000);
+    // Start the timeout before navigation so an immediate mock/bridge reply
+    // cannot leave a new timer behind after rendering.
+    bridge.src=endpoint+"?"+q.toString()+"&_="+Date.now();
   }
 
   window.addEventListener("message",function(e){
+    if(mode==="v2"){
+      if(!awaiting||completed||!sessionGate)return;
+      let result;
+      try{result=sessionGate.accept(e);}catch(_){showError(errorText);return;}
+      if(!result)return;
+      if(result.ok===true)render(result);
+      else showError(result.message||errorText);
+      return;
+    }
+    if(mode!=="legacy")return;
     if(!awaiting||completed||!trustedOrigin(e.origin))return;
 
     const data=e.data||{};
