@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "assets/js/purchase-bridge-session.js",
+      "sha256": "8f48458c0b5d8ac0a0f7e79ab3553f350c065da46dbde09473cc97aebe6744e4"
+    },
+    {
+      "path": "tests/fixtures/purchase-bridge/PaymentContract.gs",
+      "sha256": "8a14224d333f70080f68fd79ddc8907d470c6473f387ba83a0b9a525a7ced121"
+    },
+    {
+      "path": "tests/fixtures/purchase-bridge/PurchaseBridgeContract.gs",
+      "sha256": "d6412c78d9c3a4a87f2ee935c8886507356ec849affe486ed785ff39f07e5b00"
+    }
+  ],
+  "clientExecutableSha256": "d6e35ac9a430cb350a8884a15463f1f90164e0c84d9e0fd31f6780b0c390ec6b",
+  "upstream": {
+    "repository": "hiyaguchi/Kingdom",
+    "commit": "6ca8ad3f7d79f21d95789f70916a5400435ca897",
+    "clientBlob": "22fc914cff1f38375c1df3cac45e799e5c2ccccf",
+    "paymentBlob": "fe63000ce8bdb2a1f6fa6c282831259a1e705f5e",
+    "producerBlob": "670c5939861f95c56cf25bd55b4c2756c3c348e3"
+  },
+  "normalization": "CRLF to LF, trim trailing whitespace, one final LF; client leading comment replaced only"
+}

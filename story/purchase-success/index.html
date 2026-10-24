@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
 <title>ご購入ありがとうございます｜リラックスサービス</title>
 <style>
 :root{--pink:#e75f9d;--pink-dark:#a13e69;--bg:#fff8fb;--line:#eadde3;--text:#302b2d;--muted:#756b70}
@@ -15,7 +16,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,B
 h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 .lead{font-weight:700;line-height:1.7;margin:0 0 18px}
 .card,.phone,.notice{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
-.card{line-height:1.8}
+.card{line-height:1.8;overflow-wrap:anywhere}
 .phone strong{display:block;margin-top:6px;font-size:27px;line-height:1.2;color:#1647d8}
 .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;padding:12px 14px;margin:10px 0;border:0;border-radius:10px;background:var(--pink);color:#fff;text-decoration:none;font-size:16px;font-weight:800;text-align:center}
 .btn.secondary{background:#fff;color:var(--pink-dark);border:1px solid #e6bdd0}
@@ -46,7 +47,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 <p class="small" id="confirmation"></p>
 </section>
 
-<section id="error" class="error">
+<section id="error" class="error" aria-live="polite">
 <h1>確認に時間がかかっています</h1>
 <p id="error-message">お支払い直後は反映に少し時間がかかる場合があります。</p>
 <button class="btn" type="button" id="retry">もう一度確認する</button>
@@ -56,6 +57,8 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 <iframe id="bridge" class="bridge" title="決済確認" aria-hidden="true"></iframe>
 </main>
 
+<script src="/assets/js/purchase-bridge-config.js?v=20261024a"></script>
+<script src="/assets/js/purchase-bridge-session.js?v=20261024a"></script>
 <script>
 (function(){
   "use strict";
@@ -69,6 +72,14 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   const errorMessage=document.getElementById("error-message");
   const bridge=document.getElementById("bridge");
   let timer=null;
+  let awaiting=false;
+  let completed=false;
+  let sessionGate=null;
+  const issuedV2Requests=new Set();
+  const config=window.RELAX_PURCHASE_BRIDGE_CONFIG;
+  const mode=config&&config.mode;
+  let v2Suspended=mode==="v2"&&document.visibilityState==="hidden";
+  const errorText="確認できませんでした。決済をやり直さず、時間をおいてもう一度確認してください。";
 
   function trustedOrigin(origin){
     try{
@@ -87,8 +98,35 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     });
   }
 
+  function phoneDigits(value){
+    if(typeof value!=="string"||!/^\+?[\d\s().-]+$/.test(value.trim()))return "";
+    let digits=value.replace(/\D/g,"");
+    if(digits.indexOf("81")===0)digits="0"+digits.slice(2);
+    return /^0\d{9,10}$/.test(digits)?digits:"";
+  }
+
+  function documentUrl(value){
+    if(typeof value!=="string")return "";
+    try{
+      const u=new URL(value);
+      if(u.protocol!=="https:"||u.username||u.password||u.port||u.hash)return "";
+      if(u.hostname!=="stripe.com"&&!u.hostname.endsWith(".stripe.com"))return "";
+      return u.pathname!=="/"?u.href:"";
+    }catch(_){return "";}
+  }
+
+  function validDetails(data){
+    return ["counselorName","ticketLabel","amountLabel","lpId","consultantNo"].every(function(key){
+      return typeof data[key]==="string"&&data[key].trim().length>0;
+    })&&["standard","initial"].includes(data.ticketKind)&&
+      [30,60,90].includes(data.durationMinutes)&&
+      Number.isSafeInteger(data.amountJpy)&&data.amountJpy>0;
+  }
+
   function showError(message){
     clearTimeout(timer);
+    if(sessionGate)sessionGate.cancel();
+    awaiting=false;
     loading.hidden=true;
     success.hidden=true;
     error.style.display="block";
@@ -104,7 +142,8 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
       s.src="https://www.googletagmanager.com/gtag/js?id=G-X63W5K5P5Q";
       document.head.appendChild(s);
       window.gtag("js",new Date());
-      window.gtag("config","G-X63W5K5P5Q");
+      // The URL query contains a payment session; omit it from analytics.
+      window.gtag("config","G-X63W5K5P5Q",{page_location:location.origin+location.pathname});
     }
 
     const key="relax_purchase_"+sessionId;
@@ -120,6 +159,8 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 
   function render(data){
     clearTimeout(timer);
+    awaiting=false;
+    completed=true;
     loading.hidden=true;
     error.style.display="none";
     success.hidden=false;
@@ -129,25 +170,28 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
       esc(data.ticketLabel)+"<br>"+esc(data.amountLabel);
 
     const phoneArea=document.getElementById("phone-area");
-    if(data.counselorPhone){
-      const digits=String(data.counselorPhone).replace(/\D/g,"");
+    const digits=phoneDigits(data.counselorPhone);
+    if(digits){
       phoneArea.innerHTML=
         '<div class="phone"><div>お電話先</div><strong>'+esc(data.counselorPhone)+'</strong></div>'+
         '<a class="btn phone-call" href="tel:'+esc(digits)+'">相談員へ電話をかける</a>'+
         '<p>購入時に入力した電話番号から、番号を通知してお電話ください。</p>';
     }else{
       phoneArea.innerHTML=
-        '<div class="notice">相談員の電話番号を確認中です。時間をおいて再読み込みしてください。</div>';
+        '<div class="notice">相談員の電話番号を確認できていません。決済をやり直さず、この画面を保存し、時間をおいて再読み込みしてください。</div>';
     }
 
     const docs=[];
-    if(data.receiptUrl){
-      docs.push('<a class="btn secondary" href="'+esc(data.receiptUrl)+'" target="_blank" rel="noopener">領収書を開く</a>');
+    const receiptUrl=documentUrl(data.receiptUrl);
+    const invoicePdfUrl=documentUrl(data.invoicePdfUrl);
+    const invoiceUrl=documentUrl(data.invoiceUrl);
+    if(receiptUrl){
+      docs.push('<a class="btn secondary" href="'+esc(receiptUrl)+'" target="_blank" rel="noopener noreferrer">領収書を開く</a>');
     }
-    if(data.invoicePdfUrl){
-      docs.push('<a class="btn secondary" href="'+esc(data.invoicePdfUrl)+'" target="_blank" rel="noopener">請求書PDFを開く</a>');
-    }else if(data.invoiceUrl){
-      docs.push('<a class="btn secondary" href="'+esc(data.invoiceUrl)+'" target="_blank" rel="noopener">請求書を確認する</a>');
+    if(invoicePdfUrl){
+      docs.push('<a class="btn secondary" href="'+esc(invoicePdfUrl)+'" target="_blank" rel="noopener noreferrer">請求書PDFを開く</a>');
+    }else if(invoiceUrl){
+      docs.push('<a class="btn secondary" href="'+esc(invoiceUrl)+'" target="_blank" rel="noopener noreferrer">請求書を確認する</a>');
     }
     document.getElementById("documents").innerHTML=docs.length
       ? '<div class="small">お支払い書類</div>'+docs.join("")
@@ -170,9 +214,9 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     };
     track(analytics);
 
-    document.addEventListener("click",function(e){
-      const a=e.target.closest&&e.target.closest("a.phone-call");
-      if(!a||!window.gtag)return;
+    const callLink=phoneArea.querySelector("a.phone-call");
+    if(callLink)callLink.addEventListener("click",function(){
+      if(!window.gtag)return;
       window.gtag("event","call_click",{
         lp_id:data.lpId,
         consultant_no:data.consultantNo,
@@ -183,42 +227,114 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   }
 
   function load(){
-    if(!/^cs_/.test(sessionId)){
+    if(awaiting||completed)return;
+    if(mode==="v2"&&(v2Suspended||document.visibilityState==="hidden"))return;
+    if(params.getAll("session_id").length!==1||sessionId.length>256||!/^cs_(?:test|live)_[a-zA-Z0-9]+$/.test(sessionId)){
       showError("注文情報を確認できませんでした。");
       return;
     }
 
+    let endpoint=GAS_URL,request;
+    try{
+      if(mode==="v2"){
+        endpoint=config.endpointUrl;
+        // Static configuration pins the exact reviewed deployment. No URL or
+        // message override, query parameters, or fallback to the side-effectful
+        // legacy handler is allowed when v2 cannot be used.
+        if(typeof endpoint!=="string"||endpoint===GAS_URL||
+          !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)||
+          typeof window.RelaxPurchaseBridgeSession!=="function")throw Error("V2_NOT_READY");
+        if(!sessionGate)sessionGate=window.RelaxPurchaseBridgeSession({sessionId:sessionId,parentOrigin:location.origin});
+        request=sessionGate.begin();
+        if(issuedV2Requests.has(request.request_id))throw Error("REQUEST_REUSED");
+        issuedV2Requests.add(request.request_id);
+      }else if(mode==="legacy"){
+        request={action:"success_bridge",session_id:sessionId,parent_origin:location.origin};
+      }else{
+        throw Error("CONFIG_REQUIRED");
+      }
+    }catch(_){showError(errorText);return;}
+
     loading.hidden=false;
     success.hidden=true;
     error.style.display="none";
-
-    const q=new URLSearchParams({
-      action:"success_bridge",
-      session_id:sessionId,
-      parent_origin:location.origin
-    });
-
-    bridge.src=GAS_URL+"?"+q.toString()+"&_="+Date.now();
+    awaiting=true;
+    const q=new URLSearchParams(request);
 
     clearTimeout(timer);
     timer=setTimeout(function(){
       showError("確認に時間がかかっています。もう一度確認してください。");
     },20000);
+    // Start the timeout before navigation so an immediate mock/bridge reply
+    // cannot leave a new timer behind after rendering.
+    bridge.src=endpoint+"?"+q.toString()+"&_="+Date.now();
   }
 
   window.addEventListener("message",function(e){
-    if(!trustedOrigin(e.origin))return;
+    if(mode==="v2"){
+      if(!awaiting||completed||!sessionGate)return;
+      let result;
+      try{result=sessionGate.accept(e);}catch(_){showError(errorText);return;}
+      if(!result)return;
+      if(result.ok===true)render(result);
+      else showError(result.message||errorText);
+      return;
+    }
+    if(mode!=="legacy")return;
+    if(!awaiting||completed||!trustedOrigin(e.origin))return;
 
     const data=e.data||{};
+    if(typeof data!=="object"||Array.isArray(data))return;
     if(data.source!=="relax-stripe-gas"||data.kind!=="purchase_success")return;
 
-    if(data.ok) render(data);
-    else showError(data.message||"お支払いを確認できませんでした。");
+    // This is display validation, not authentication or payment verification.
+    // The existing nested GAS bridge does not echo a session/request identifier.
+    if(data.ok===true){
+      if(validDetails(data))render(data);
+      else showError("購入内容を確認できませんでした。決済をやり直さず、時間をおいてもう一度確認してください。");
+    }else if(data.ok===false){
+      showError(typeof data.message==="string"&&data.message ? data.message : "お支払いを確認できませんでした。");
+    }
   });
 
   document.getElementById("retry").addEventListener("click",load);
+  function clearRestoredView(){
+    clearTimeout(timer);
+    if(sessionGate)sessionGate.cancel();
+    sessionGate=null;
+    awaiting=false;
+    completed=false;
+    ["ticket-card","phone-area","documents"].forEach(function(id){document.getElementById(id).innerHTML="";});
+    ["expires","confirmation"].forEach(function(id){document.getElementById(id).textContent="";});
+    success.hidden=true;
+    loading.hidden=false;
+    error.style.display="none";
+  }
+  function suspendV2(){
+    if(mode!=="v2")return;
+    v2Suspended=true;
+    clearRestoredView();
+  }
+  function resumeV2(){
+    if(mode!=="v2"||!v2Suspended||document.visibilityState==="hidden")return;
+    v2Suspended=false;
+    load();
+  }
+  // Only v2 is read-only by contract. Never re-run legacy fulfillment on return.
+  // Hide private DOM and cancel the old challenge on either kind of departure.
+  // pageshow and visibilitychange may both signal the same return, in either
+  // order; consume the suspended state once to avoid duplicate confirmations.
+  window.addEventListener("pagehide",suspendV2);
+  window.addEventListener("pageshow",function(e){
+    if(e.persisted)resumeV2();
+  });
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="hidden")suspendV2();
+    else resumeV2();
+  });
   load();
 })();
 </script>
 </body>
 </html>
+
