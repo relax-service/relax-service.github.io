@@ -78,6 +78,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   const issuedV2Requests=new Set();
   const config=window.RELAX_PURCHASE_BRIDGE_CONFIG;
   const mode=config&&config.mode;
+  let v2Suspended=mode==="v2"&&document.visibilityState==="hidden";
   const errorText="確認できませんでした。決済をやり直さず、時間をおいてもう一度確認してください。";
 
   function trustedOrigin(origin){
@@ -227,6 +228,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 
   function load(){
     if(awaiting||completed)return;
+    if(mode==="v2"&&(v2Suspended||document.visibilityState==="hidden"))return;
     if(params.getAll("session_id").length!==1||sessionId.length>256||!/^cs_(?:test|live)_[a-zA-Z0-9]+$/.test(sessionId)){
       showError("注文情報を確認できませんでした。");
       return;
@@ -308,14 +310,27 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     loading.hidden=false;
     error.style.display="none";
   }
-  // Only v2 is read-only by contract. Never re-run legacy fulfillment on back.
-  // pagehide removes private DOM before a normal back/forward-cache snapshot;
-  // persisted pageshow also clears it before requesting a fresh confirmation.
-  window.addEventListener("pagehide",function(){if(mode==="v2")clearRestoredView();});
-  window.addEventListener("pageshow",function(e){
-    if(mode!=="v2"||!e.persisted)return;
+  function suspendV2(){
+    if(mode!=="v2")return;
+    v2Suspended=true;
     clearRestoredView();
+  }
+  function resumeV2(){
+    if(mode!=="v2"||!v2Suspended||document.visibilityState==="hidden")return;
+    v2Suspended=false;
     load();
+  }
+  // Only v2 is read-only by contract. Never re-run legacy fulfillment on return.
+  // Hide private DOM and cancel the old challenge on either kind of departure.
+  // pageshow and visibilitychange may both signal the same return, in either
+  // order; consume the suspended state once to avoid duplicate confirmations.
+  window.addEventListener("pagehide",suspendV2);
+  window.addEventListener("pageshow",function(e){
+    if(e.persisted)resumeV2();
+  });
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="hidden")suspendV2();
+    else resumeV2();
   });
   load();
 })();
