@@ -103,7 +103,7 @@
   }
   function slotLabel(slot){
     var same=dayKey(slot.start)===dayKey(slot.end);
-    return dayLabel(slot.start)+' '+timeLabel(slot.start)+'〜'+(same?'':'翌')+timeLabel(slot.end);
+    return dayLabel(slot.start)+' '+timeLabel(slot.start)+'〜'+(same?'':dayLabel(slot.end)+' ')+timeLabel(slot.end);
   }
   function build(person,now){
     if(!person||typeof person!=='object'||typeof person.consultantNo!=='string')return null;
@@ -137,7 +137,7 @@
     audio.controls=true;audio.playsInline=true;audio.preload='none';audio.src=voice;
     audioBlock.appendChild(audio);card.appendChild(audioBlock);}
     var schedule=element('div','schedule');
-    var title=element('div','schedule-head');appendText(title,'b','','待機予定');schedule.appendChild(title);
+    var title=element('div','schedule-head');appendText(title,'b','','待機予定（日本時間）');schedule.appendChild(title);
     var ul=element('ul','schedule-list');
     slots.forEach(function(s){appendText(ul,'li','',slotLabel(s));});
     schedule.appendChild(ul);card.appendChild(schedule);

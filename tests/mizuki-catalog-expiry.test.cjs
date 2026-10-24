@@ -11,8 +11,8 @@ class Element{
  querySelectorAll(s){return this.children.filter(c=>s.startsWith('[data-catalog-generated')?c.dataset.catalogGenerated==='true':c.className==='person'&&c.dataset.counselorId);}
 }
 const settle=()=>new Promise(r=>setImmediate(r));
-function fixture(){
- let now=Date.parse('2026-10-24T12:00:00Z'),serial=0,refresh;
+function fixture(initialNow='2026-10-24T12:00:00Z'){
+ let now=Date.parse(initialNow),serial=0,refresh;
  const timers=new Map(),requests=[],listeners={};
  const container=new Element('div'),legacy=new Element('article'),status=new Element('p');
  legacy.className='person';legacy.dataset.counselorId='0000-3';container.appendChild(legacy);
@@ -42,4 +42,13 @@ test('returning from a suspended tab clears stale purchase before network respon
 test('newer successful response replaces the previous expiry timer',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));await f.tick(1000);f.refresh();await f.reply(f.data(f.person()));await f.tick(1000);assert.equal(f.dynamic().length,1);});
 test('failed refresh cannot be resurrected by an older expiry callback',async()=>{const f=fixture();await f.reply(f.data(f.person(20000)));f.refresh();await f.tick(8000);assert.equal(f.dynamic().length,0);await f.tick(12000);assert.equal(f.dynamic().length,0);f.assertLegacy();});
 test('fresh data recovers normally after automatic expiry',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));await f.tick(2000);f.refresh();await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);f.assertLegacy();});
+
+const dateCases=[
+ ['multi-day slot shows its actual ending date instead of the next day','2026-10-24T12:00:00Z','2026-10-24T14:00:00Z','2026-10-25T16:00:00Z','10/24(土) 23:00〜10/26(月) 01:00'],
+ ['overnight slot names both dates in Japan time','2026-10-24T12:00:00Z','2026-10-24T14:00:00Z','2026-10-24T16:00:00Z','10/24(土) 23:00〜10/25(日) 01:00'],
+ ['month boundary retains the actual end month','2026-10-24T12:00:00Z','2026-10-31T14:00:00Z','2026-10-31T16:00:00Z','10/31(土) 23:00〜11/1(日) 01:00'],
+ ['year boundary retains the actual January date','2026-12-31T12:00:00Z','2026-12-31T14:00:00Z','2026-12-31T16:00:00Z','12/31(木) 23:00〜1/1(金) 01:00'],
+ ['midnight on one date remains an unambiguous same-day range','2026-10-24T12:00:00Z','2026-10-24T15:00:00Z','2026-10-24T16:00:00Z','10/25(日) 00:00〜01:00']
+];
+for(const [name,now,start,end,expected] of dateCases)test(name,async()=>{const f=fixture(now),p=f.person();p.slots=[{start,end}];await f.reply(f.data(p));assert.equal(f.dynamic().length,1);assert.equal(descendants(f.dynamic()[0]).find(n=>n.tag==='li').textContent,expected);f.assertLegacy();});
 (async()=>{for(const [name,fn] of cases){await fn();console.log('PASS '+name);}console.log('MIZUKI_CATALOG_EXPIRY_PASS: '+cases.length+' cases; synthetic clock and network only');})().catch(e=>{console.error(e);process.exitCode=1;});
