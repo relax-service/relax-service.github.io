@@ -75,6 +75,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   let awaiting=false;
   let completed=false;
   let sessionGate=null;
+  const issuedV2Requests=new Set();
   const config=window.RELAX_PURCHASE_BRIDGE_CONFIG;
   const mode=config&&config.mode;
   const errorText="確認できませんでした。決済をやり直さず、時間をおいてもう一度確認してください。";
@@ -243,6 +244,8 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
           typeof window.RelaxPurchaseBridgeSession!=="function")throw Error("V2_NOT_READY");
         if(!sessionGate)sessionGate=window.RelaxPurchaseBridgeSession({sessionId:sessionId,parentOrigin:location.origin});
         request=sessionGate.begin();
+        if(issuedV2Requests.has(request.request_id))throw Error("REQUEST_REUSED");
+        issuedV2Requests.add(request.request_id);
       }else if(mode==="legacy"){
         request={action:"success_bridge",session_id:sessionId,parent_origin:location.origin};
       }else{
@@ -293,6 +296,27 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   });
 
   document.getElementById("retry").addEventListener("click",load);
+  function clearRestoredView(){
+    clearTimeout(timer);
+    if(sessionGate)sessionGate.cancel();
+    sessionGate=null;
+    awaiting=false;
+    completed=false;
+    ["ticket-card","phone-area","documents"].forEach(function(id){document.getElementById(id).innerHTML="";});
+    ["expires","confirmation"].forEach(function(id){document.getElementById(id).textContent="";});
+    success.hidden=true;
+    loading.hidden=false;
+    error.style.display="none";
+  }
+  // Only v2 is read-only by contract. Never re-run legacy fulfillment on back.
+  // pagehide removes private DOM before a normal back/forward-cache snapshot;
+  // persisted pageshow also clears it before requesting a fresh confirmation.
+  window.addEventListener("pagehide",function(){if(mode==="v2")clearRestoredView();});
+  window.addEventListener("pageshow",function(e){
+    if(mode!=="v2"||!e.persisted)return;
+    clearRestoredView();
+    load();
+  });
   load();
 })();
 </script>

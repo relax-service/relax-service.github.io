@@ -16,7 +16,7 @@ function payment(){return {mode:'test',contactVerified:true,phoneSourceVersion:'
  session:{id:sessionId,livemode:false,status:'complete',payment_status:'paid',client_reference_id:'0099_mizuki',payment_link:'plink_QA',currency:'jpy',amount_subtotal:4500,amount_total:4500,total_details:{amount_discount:0}},
  lineItems:{has_more:false,data:[{quantity:1,price:{id:'price_QA',product:'prod_QA',livemode:false,currency:'jpy',type:'one_time',unit_amount:4500}}]}};}
 function fixture(options={}){
- let now=100,seq=0,entropy=0;const listeners={},timers=new Map(),nodes={},requests=[],events=[];
+ let now=100,seq=0,entropy=0;const listeners={},timers=new Map(),nodes={},requests=[],events=[],storage=new Map();
  const el=id=>nodes[id]||(nodes[id]={hidden:id==='success',style:{},innerHTML:'',textContent:'',listeners:{},addEventListener(k,fn){this.listeners[k]=fn;},querySelector(s){return s==='a.phone-call'&&this.innerHTML.includes('phone-call')?el('phone-link'):null;}});
  const window={RELAX_PURCHASE_BRIDGE_CONFIG:{mode:'v2',endpointUrl:endpoint},addEventListener:(k,fn)=>listeners[k]=fn,gtag:(...args)=>events.push(args)};
  if('config' in options)window.RELAX_PURCHASE_BRIDGE_CONFIG=options.config;
@@ -30,10 +30,10 @@ function fixture(options={}){
  Object.defineProperty(el('bridge'),'src',{set(url){requests.push(url);if(options.immediate)reply(url);}});
  const ctx={window,document,URL,URLSearchParams,location:{origin,pathname:'/story/purchase-success/',search:options.query||'?session_id='+sessionId},
  crypto:options.crypto||{getRandomValues(a){a.fill(++entropy);}},performance:{now:()=>now},Date,Number,console,
- localStorage:{getItem:()=>null,setItem:()=>{}},setTimeout:(fn,ms)=>{timers.set(++seq,{fn,at:now+ms});return seq;},clearTimeout:id=>timers.delete(id)};
+ localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},setTimeout:(fn,ms)=>{timers.set(++seq,{fn,at:now+ms});return seq;},clearTimeout:id=>timers.delete(id)};
  vm.createContext(ctx);if(!options.noClient){vm.runInContext(client,ctx);window.RelaxPurchaseBridgeSession=ctx.RelaxPurchaseBridgeSession;}
  vm.runInContext(page,ctx);
- return {window,requests,events,el,reply,timers,
+ return {window,requests,events,el,reply,timers,lifecycle:(name,event={})=>listeners[name](event),
   send:e=>listeners.message(e),retry:()=>el('retry').listeners.click(),
   tick(ms){now+=ms;for(const [id,t]of [...timers])if(t.at<=now){timers.delete(id);t.fn();}},
   successful:()=>!el('success').hidden};
@@ -62,4 +62,9 @@ test('URL parameters cannot override the pinned endpoint, mode or generated chal
 test('duplicate or invalid session is refused before any navigation',()=>{for(const query of ['?session_id=cs_','?session_id='+sessionId+'&session_id='+sessionId]){const f=fixture({query});assert.equal(f.requests.length,0);}});
 test('unverified customer details, document URLs and HTML markup do not become executable output',()=>{const f=fixture(),i=payment();i.counselor.name='<img onerror="unsafe">';i.receiptUrl='javascript:unsafe';f.reply(undefined,i);assert(f.successful());assert.match(f.el('ticket-card').innerHTML,/&lt;img/);assert.doesNotMatch(f.el('ticket-card').innerHTML,/<img/);assert.doesNotMatch(f.el('documents').innerHTML,/href=/);});
 test('default deployed configuration preserves legacy mode with v2 endpoint empty',()=>{const ctx={window:{}};vm.runInNewContext(fs.readFileSync('assets/js/purchase-bridge-config.js','utf8'),ctx);assert.equal(ctx.window.RELAX_PURCHASE_BRIDGE_CONFIG.mode,'legacy');assert.equal(ctx.window.RELAX_PURCHASE_BRIDGE_CONFIG.endpointUrl,'');assert(Object.isFrozen(ctx.window.RELAX_PURCHASE_BRIDGE_CONFIG));assert.match(html,/purchase-bridge-config\.js\?v=/);assert.match(html,/purchase-bridge-session\.js\?v=/);});
+test('pagehide clears verified contact before cached restoration; no reply is accepted while hidden',()=>{const f=fixture(),old=f.requests[0];f.reply();assert(f.successful());f.lifecycle('pagehide');assert(!f.successful());assert.equal(f.el('phone-area').innerHTML,'');assert.equal(f.el('documents').innerHTML,'');f.reply(old);assert(!f.successful());assert.equal(f.requests.length,1);});
+test('cached restoration confirms afresh and ignores replies from the previous visit',()=>{const f=fixture(),old=f.requests[0];f.reply();f.lifecycle('pagehide');f.lifecycle('pageshow',{persisted:true});assert.equal(f.requests.length,2);assert(!f.successful());assert.notEqual(new URL(old).searchParams.get('request_id'),new URL(f.requests[1]).searchParams.get('request_id'));f.reply(old);assert(!f.successful());f.reply();assert(f.successful());assert.equal(f.events.filter(x=>x[1]==='purchase_complete').length,1);});
+test('restoration cannot display a previous contact when the latest status is unpaid',()=>{const f=fixture();f.reply();f.lifecycle('pageshow',{persisted:true});const i=payment();i.session.payment_status='unpaid';f.reply(undefined,i);assert(!f.successful());assert.equal(f.el('phone-area').innerHTML,'');assert.equal(f.el('error').style.display,'block');});
+test('initial pageshow and legacy restoration do not issue extra fulfillment requests',()=>{const f=fixture();f.lifecycle('pageshow',{persisted:false});assert.equal(f.requests.length,1);const g=fixture({config:{mode:'legacy',endpointUrl:''}});g.lifecycle('pagehide');g.lifecycle('pageshow',{persisted:true});assert.equal(g.requests.length,1);});
+test('restoration refuses a reused challenge even when a new gate has been created',()=>{const f=fixture({crypto:{getRandomValues(a){a.fill(1);}}});f.reply();f.lifecycle('pagehide');f.lifecycle('pageshow',{persisted:true});assert.equal(f.requests.length,1);assert(!f.successful());assert.equal(f.el('phone-area').innerHTML,'');assert.equal(f.el('error').style.display,'block');});
 for(const [name,fn]of cases){fn();console.log('PASS '+name);}console.log('PURCHASE_SUCCESS_V2_PASS: '+cases.length+' synthetic integration cases; no HTTP, charges or sends');
