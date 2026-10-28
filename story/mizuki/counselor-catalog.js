@@ -29,7 +29,9 @@
     return '';
   }
   function profileAllowed(raw){
+    if(typeof raw!=='string')return '';
     try{var u=new URL(raw);return u.protocol==='https:'&&u.hostname==='www.relax-s.com'
+      &&!u.username&&!u.password&&!u.port&&!u.search
       &&/^\/(counselor|supporter|fortuneteller)\.html$/.test(u.pathname)?u.href:'';}catch(e){return '';}
   }
   function stripeMenu(person){
@@ -115,7 +117,10 @@
     var profile=profileAllowed(person.profileUrl);
     var photo=mediaAllowed(person.imagePath,'image'),voice=mediaAllowed(person.audioPath,'audio');
     var rate=person.minutePrice;
-    if((person.checkoutProvider==='stripe'?!menu:!checkout)||!profile||!photo||
+    if((person.checkoutProvider==='stripe'?!menu:!checkout)||!photo||
+      typeof person.profileUrl!=='string'||(person.profileUrl!==''&&!profile)||
+      typeof person.intro!=='string'||!person.intro.trim()||
+      typeof person.roleLabel!=='string'||!person.roleLabel.trim()||
       (person.audioPath&&!voice)||!Number.isInteger(rate)||rate<1||rate>10000||
       (person.initialOffer&&!initial))return null;
     var slots=safeSlots(person,now);
@@ -141,8 +146,12 @@
     var ul=element('ul','schedule-list');
     slots.forEach(function(s){appendText(ul,'li','',slotLabel(s));});
     schedule.appendChild(ul);card.appendChild(schedule);
-    var more=appendText(card,'a','profile-link','詳しいプロフィール');
-    more.href=profile;more.target='_blank';more.rel='noopener noreferrer';
+    if(profile){
+      var more=appendText(card,'a','profile-link','詳しいプロフィール');
+      more.href=profile;more.target='_blank';more.rel='noopener noreferrer';
+    }else{
+      appendText(card,'p','profile-note','本体サイトに詳細プロフィールの掲載がありません。ご不明点はお問い合わせください。');
+    }
     var purchase=element('div','purchase-block');
     appendText(purchase,'div','purchase-label','お話する時間を選ぶ');
     appendText(purchase,'p','purchase-note','料金：1分'+rate.toLocaleString('ja-JP')+'円（30分'+(rate*30).toLocaleString('ja-JP')+'円）');
