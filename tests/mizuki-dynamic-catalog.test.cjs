@@ -110,6 +110,21 @@ const dynamic=()=>container.children.filter(x=>x.dataset.catalogGenerated==='tru
  const noVoice=JSON.parse(JSON.stringify(third));noVoice.audioPath='';
  payload=asData([noVoice]);nextRefresh();await settle();assert.equal(dynamic().length,1,'optional audio');
 
+ const noProfile=JSON.parse(JSON.stringify(third));noProfile.profileUrl='';
+ payload=asData([noProfile]);nextRefresh();await settle();
+ assert.equal(dynamic().length,1,'an approved card may have no external detail page');
+ assert.equal(descendants(dynamic()[0]).filter(x=>x.className==='cta').length,3);
+ assert.equal(descendants(dynamic()[0]).filter(x=>x.className==='profile-link').length,0);
+ assert.ok(descendants(dynamic()[0]).some(x=>x.textContent==='本体サイトに詳細プロフィールの掲載がありません。ご不明点はお問い合わせください。'));
+ for(const invalid of [null,undefined,0,{},[],
+   'javascript:alert(1)','https://www.relax-s.com.evil.invalid/counselor.html',
+   'https://user@www.relax-s.com/counselor.html','https://www.relax-s.com:444/counselor.html',
+   'https://www.relax-s.com/counselor.html?redirect=bad']){
+  const bad=JSON.parse(JSON.stringify(third));bad.profileUrl=invalid;
+  payload=asData([bad]);nextRefresh();await settle();
+  assert.equal(dynamic().length,0,'malformed detail URLs are rejected, not treated as absent');
+ }
+
  const evil=person('0133','悪意ある変更','stores','https://relax-s.stores.jp.evil.com/x');
  payload=asData([ohira,third,evil]);nextRefresh();await settle();
  assert.equal(dynamic().length,2,'bad checkout host is rejected');
