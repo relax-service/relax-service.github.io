@@ -5,6 +5,8 @@ on:
       - 'story/mizuki/index.html'
       - 'story/mizuki/counselor-catalog.js'
       - 'lp001/lp-config.js'
+      - 'lp001/app.js'
+      - 'tests/mizuki-status-transport.test.cjs'
       - 'tests/mizuki-dynamic-catalog.test.cjs'
       - 'tests/mizuki-catalog-expiry.test.cjs'
       - 'story/purchase-success/index.html'
@@ -30,6 +32,8 @@ jobs:
       - name: Validate no per-consultant code edits and safe payment routing (mock only)
         run: |
           node --check story/mizuki/counselor-catalog.js
+          node --check lp001/app.js
+          node tests/mizuki-status-transport.test.cjs
           node --check tests/mizuki-dynamic-catalog.test.cjs
           node tests/mizuki-dynamic-catalog.test.cjs
           node tests/mizuki-catalog-expiry.test.cjs
