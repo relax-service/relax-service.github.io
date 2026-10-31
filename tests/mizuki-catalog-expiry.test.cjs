@@ -28,7 +28,7 @@ function fixture(initialNow='2026-10-24T12:00:00Z'){
  const reply=async(payload,index=requests.length-1)=>{assert.equal(typeof window[requests[index]],'function');window[requests[index]](payload);await settle();};
  const tick=async ms=>{const end=now+ms;for(;;){const item=[...timers].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!item)break;now=item[1].at;timers.delete(item[0]);item[1].fn();await settle();}now=end;};
  const dynamic=()=>container.children.filter(c=>c.dataset.catalogGenerated==='true');
- return {person,data,reply,tick,dynamic,requests,status,refresh:()=>refresh(),
+ return {person,data,reply,tick,dynamic,requests,status,callback:i=>window[requests[i]],refresh:()=>refresh(),
   resume:async ms=>{now+=ms;listeners.visibilitychange();await settle();},
   assertLegacy:()=>assert.equal(container.children[0],legacy)};
 }
@@ -40,8 +40,20 @@ test('five-minute snapshot limit applies while a new request is still pending',a
 test('exact five-minute-old response cannot restore purchase',async()=>{const f=fixture();await f.reply(f.data(f.person(),300000));assert.equal(f.dynamic().length,0);});
 test('returning from a suspended tab clears stale purchase before network response',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.resume(360000);assert.equal(f.dynamic().length,0);assert.equal(f.requests.length,2);});
 test('newer successful response replaces the previous expiry timer',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));await f.tick(1000);f.refresh();await f.reply(f.data(f.person()));await f.tick(1000);assert.equal(f.dynamic().length,1);});
-test('failed refresh cannot be resurrected by an older expiry callback',async()=>{const f=fixture();await f.reply(f.data(f.person(20000)));f.refresh();await f.tick(8000);assert.equal(f.dynamic().length,0);await f.tick(12000);assert.equal(f.dynamic().length,0);f.assertLegacy();});
+test('failed refresh cannot be resurrected by an older expiry callback',async()=>{const f=fixture();await f.reply(f.data(f.person(60000)));f.refresh();await f.tick(20000);assert.equal(f.dynamic().length,0);await f.tick(40000);assert.equal(f.dynamic().length,0);f.assertLegacy();});
 test('fresh data recovers normally after automatic expiry',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));await f.tick(2000);f.refresh();await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);f.assertLegacy();});
+
+test('a valid Google response after the old eight-second limit still renders',async()=>{const f=fixture(),payload=f.data(f.person());await f.tick(9430);await f.reply(payload);assert.equal(f.dynamic().length,1);f.assertLegacy();});
+
+test('a valid response just before twenty seconds still renders',async()=>{const f=fixture(),payload=f.data(f.person());await f.tick(19999);await f.reply(payload);assert.equal(f.dynamic().length,1);});
+
+test('twenty-second timeout ignores late data then releases its callback',async()=>{const f=fixture(),payload=f.data(f.person());await f.tick(20000);assert.match(f.status.textContent,/取得できません/);await f.tick(1000);await f.reply(payload,0);assert.equal(f.dynamic().length,0);await f.tick(59000);assert.equal(f.callback(0),undefined);assert.equal(f.requests.length,1);f.assertLegacy();});
+
+test('an expired request cannot overwrite successful recovery',async()=>{const f=fixture(),old=f.data(f.person());old.counselors[0].displayName='古い応答';await f.tick(20000);f.refresh();const fresh=f.data(f.person());fresh.counselors[0].displayName='現在の応答';await f.reply(fresh);await f.reply(old,0);assert.equal(f.dynamic().length,1);assert.equal(descendants(f.dynamic()[0]).find(n=>n.className==='person-name').textContent,'現在の応答');});
+
+test('a slow response cannot extend the snapshot freshness limit',async()=>{const f=fixture(),payload=f.data(f.person(),295000);await f.tick(9430);await f.reply(payload);assert.equal(f.dynamic().length,0);assert.match(f.status.textContent,/取得できません/);});
+
+test('a slot ending during a slow request cannot create a purchase card',async()=>{const f=fixture(),payload=f.data(f.person(8000));await f.tick(9430);await f.reply(payload);assert.equal(f.dynamic().length,0);f.assertLegacy();});
 
 const dateCases=[
  ['multi-day slot shows its actual ending date instead of the next day','2026-10-24T12:00:00Z','2026-10-24T14:00:00Z','2026-10-25T16:00:00Z','10/24(土) 23:00〜10/26(月) 01:00'],

@@ -214,10 +214,18 @@
     return new Promise(function(resolve,reject){
       var cb='__relaxCatalog_'+Date.now()+'_'+Math.random().toString(36).slice(2).replace(/[^a-z0-9]/g,'');
       var tag=document.createElement('script'),done=false;
-      var timeout=setTimeout(function(){finish(new Error('timeout'));},8000);
-      function finish(error,data){
+      var timeout=setTimeout(function(){finish(new Error('timeout'),undefined,true);},20000);
+      function finish(error,data,allowLateResponse){
         if(done)return;done=true;
-        clearTimeout(timeout);try{delete window[cb];}catch(ignore){}
+        clearTimeout(timeout);
+        if(allowLateResponse){
+          // Google can finish a removed script after the request has expired.
+          // Absorb that response without restoring old cards or purchase links.
+          window[cb]=function(){};
+          setTimeout(function(){try{delete window[cb];}catch(ignore){}},60000);
+        }else{
+          try{delete window[cb];}catch(ignore){}
+        }
         tag.remove();
         if(error)reject(error);else resolve(data);
       }
