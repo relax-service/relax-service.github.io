@@ -111,11 +111,11 @@ window.RELAX_LP_ANALYTICS={lp_id:"LP001",scenario:"mizuki",lp_version:"20261002a
 <div><b>選ぶ</b><span>今できる一歩</span></div>
 </div>
 <div class="use-steps"><h3>利用は3ステップ</h3><ol>
-<li class="use-step"><span class="step-number">1</span><div><b>話す人と時間を選ぶ</b><p>30分・60分・90分から、その場で選びます。</p></div></li>
-<li class="use-step"><span class="step-number">2</span><div><b>Stripeで購入</b><p>初回30分は電話番号で対象確認後、Stripeへ進みます。Stripeの画面に沿って必要事項を入力します。</p></div></li>
-<li class="use-step"><span class="step-number">3</span><div><b>表示された電話番号へ発信</b><p>決済完了画面に相談員の電話番号と、請求書・領収書のボタンが表示されます。</p></div></li>
+<li class="use-step"><span class="step-number">1</span><div><b>話す人と時間を選ぶ</b><p>話す人の待機予定と料金を見て、利用する時間を選びます。</p></div></li>
+<li class="use-step"><span class="step-number">2</span><div><b>チケットを購入</b><p>話す人によってStripeまたはSTORESで購入します。初回割引の対象条件は購入前に確認できます。</p></div></li>
+<li class="use-step"><span class="step-number">3</span><div><b>購入後の案内に沿って発信</b><p>購入したチケットの案内を確認して電話します。</p></div></li>
 </ol></div>
-<div class="safety-box"><h3>購入後も確認できます</h3><p><b>決済完了後、相談員の電話番号を表示します。</b>その場で請求書・領収書PDFも開けます。チケットは購入日から6か月有効です。</p></div>
+<div class="safety-box"><h3>購入後も確認できます</h3><p>購入後のご案内で、電話番号や利用方法をご確認いただけます。請求書・領収書や有効期限は購入先の案内をご確認ください。</p></div>
 
 </div></section>
 <section class="section-soft" id="story-after"><div class="pad">
@@ -154,7 +154,7 @@ window.RELAX_LP_ANALYTICS={lp_id:"LP001",scenario:"mizuki",lp_version:"20261002a
 <div class="reassurance"><b>整ったら、もう使わなくていい。</b><br>答えを代わりに決めるのではなく、自分で次の一歩を選びやすくするための時間です。</div>
 </div></section>
 <section class="section-soft" id="people"><div class="pad">
-<div class="kicker">話せる人</div><h2>梅津相談員の待機予定を見て、時間を選べます。</h2>
+<div class="kicker">話せる人</div><h2>待機予定を見て、話しやすそうな人を選べます。</h2>
 <p class="muted">待機予定を確認してから、ご希望の時間をお選びください。</p>
 <div class="counselors">
 <article class="person" data-counselor-id="0000-3"><div class="person-top"><div class="avatar"><img alt="梅津 靖裕" src="/assets/images/umetsu.png"/></div><div><div class="person-name">梅津 靖裕</div><div class="meta">50代男性｜話し相手</div></div></div><p class="one-line">どんなことでもお気軽にお電話ください。いつでもお待ちしています。</p><div class="tags"><span class="tag">人間関係</span><span class="tag">仕事</span><span class="tag">悩み全般</span></div><div class="schedule" id="realtime-schedule-0000-3"><div aria-live="polite" class="realtime-status" id="realtime-status-0000-3"><div class="realtime-status-label" id="realtime-label-0000-3">待機予定</div><div class="realtime-status-time" id="realtime-time-0000-3">待機予定を読み込み中…</div></div><div class="schedule-head"><b>今後1週間の予定</b></div><ul class="schedule-list" id="realtime-week-0000-3"><li>待機予定を読み込み中…</li></ul></div>
@@ -179,6 +179,7 @@ window.RELAX_LP_ANALYTICS={lp_id:"LP001",scenario:"mizuki",lp_version:"20261002a
 </div>
 </article>
 </div>
+<p class="muted" id="dynamic-catalog-status" role="status" aria-live="polite"></p>
 </div></section>
 <section id="faq"><div class="pad">
 <div class="kicker">初めての方へ</div><h2>うまく話せなくても大丈夫です。</h2>
@@ -190,7 +191,7 @@ window.RELAX_LP_ANALYTICS={lp_id:"LP001",scenario:"mizuki",lp_version:"20261002a
 <details class="faq-item"><summary>STORESで初回割引を使ったことがあります</summary><div class="faq-answer">Stripe移行後は、相談員ごとに初回30分をご利用いただけます。電話番号で対象確認後、そのままStripeへ進みます。</div></details>
 </div>
 </div></section>
-<section><div class="pad"><div class="kicker">料金</div><h2>このページでは、話し相手の時間を選べます。</h2><div class="pricebox"><p><b>初回30分</b><br/>1,000円（この相談員をStripeで初めて購入する方）</p><p><b>通常料金</b><br/>30分 3,000円／60分 6,000円／90分 9,000円</p></div><div class="final-cta"><a class="cta" href="#people">時間を選ぶ</a></div></div></section>
+<section><div class="pad"><div class="kicker">料金</div><h2>料金は話す人によって異なります。</h2><div class="pricebox"><p><b>梅津さん（話し相手）</b><br/>初回30分 1,000円（対象確認あり）<br/>通常30分 3,000円／60分 6,000円／90分 9,000円</p><p>ほかの話し手の料金と購入方法は、それぞれの紹介欄に表示します。</p></div><div class="final-cta"><a class="cta" href="#people">話す人を選ぶ</a></div></div></section>
 </main>
 <footer class="footer">
 <div>18歳以上｜© Relax Service / An Funny Project LLC</div>
@@ -198,8 +199,9 @@ window.RELAX_LP_ANALYTICS={lp_id:"LP001",scenario:"mizuki",lp_version:"20261002a
 </footer>
 </div>
 <script src="/lp001/lp-config.js?v=20261002a" defer></script>
-<script src="/lp001/app.js?v=20260919a" defer></script>
+<script src="/lp001/app.js?v=20261031a" defer></script>
 <script src="/assets/js/payment-policy.js?v=20261002a" defer></script>
 <script src="/assets/js/initial-checkout.js?v=20260924d" defer></script>
+<script src="/story/mizuki/counselor-catalog.js?v=20261031a" defer></script>
 </body>
 </html>

@@ -1,0 +1,41 @@
+name: Mizuki dynamic counselor catalog isolated QA
+on:
+  pull_request:
+    paths:
+      - 'story/mizuki/index.html'
+      - 'story/mizuki/counselor-catalog.js'
+      - 'lp001/lp-config.js'
+      - 'lp001/app.js'
+      - 'tests/mizuki-status-transport.test.cjs'
+      - 'tests/mizuki-dynamic-catalog.test.cjs'
+      - 'tests/mizuki-catalog-expiry.test.cjs'
+      - 'story/purchase-success/index.html'
+      - 'tests/purchase-success-display.test.cjs'
+      - 'tests/purchase-success-v2.test.cjs'
+      - 'tests/fixtures/purchase-bridge/**'
+      - 'assets/js/purchase-bridge-*.js'
+      - '.github/workflows/mizuki-dynamic-catalog-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-no-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate no per-consultant code edits and safe payment routing (mock only)
+        run: |
+          node --check story/mizuki/counselor-catalog.js
+          node --check lp001/app.js
+          node tests/mizuki-status-transport.test.cjs
+          node --check tests/mizuki-dynamic-catalog.test.cjs
+          node tests/mizuki-dynamic-catalog.test.cjs
+          node tests/mizuki-catalog-expiry.test.cjs
+          node tests/purchase-success-display.test.cjs
+          node tests/purchase-success-v2.test.cjs
