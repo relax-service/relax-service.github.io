@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
+<script>
+// Strip an emailed grant before loading scripts, images or analytics. It is
+// consumed once into the page closure below; never put it in browser storage.
+window.RELAX_PURCHASE_VIEW_BOOT=(function(){
+  const raw=String(location.hash||"");
+  if(!raw)return {raw:"",cleaned:true};
+  try{history.replaceState(null,"",location.pathname);return {raw:raw,cleaned:true};}
+  catch(_){return {raw:"",cleaned:false};}
+})();
+</script>
 <title>ご購入ありがとうございます｜リラックスサービス</title>
 <style>
 :root{--pink:#e75f9d;--pink-dark:#a13e69;--bg:#fff8fb;--line:#eadde3;--text:#302b2d;--muted:#756b70}
@@ -59,13 +69,21 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 
 <script src="/assets/js/purchase-bridge-config.js?v=20261024a"></script>
 <script src="/assets/js/purchase-bridge-session.js?v=20261024a"></script>
+<script src="/assets/js/purchase-bridge-grant.js?v=20261106a"></script>
 <script>
 (function(){
   "use strict";
 
   const GAS_URL="https://script.google.com/macros/s/AKfycbyuumB90EbJS9sesozUegcU6GgNjyPPmqKbL3ztT37lqw7tOjkDwL4-ysuvNX4xsSWS6w/exec";
+  const boot=window.RELAX_PURCHASE_VIEW_BOOT||{raw:"",cleaned:false};
+  delete window.RELAX_PURCHASE_VIEW_BOOT;
+  const config=window.RELAX_PURCHASE_BRIDGE_CONFIG;
+  const mode=config&&config.mode;
   const params=new URLSearchParams(location.search);
-  const sessionId=String(params.get("session_id")||"");
+  const fragment=new URLSearchParams(boot.raw.slice(1));
+  const validGrantBoot=boot.cleaned&&fragment.getAll("session_id").length===1&&
+    fragment.getAll("view_grant").length===1&&Array.from(fragment.keys()).length===2;
+  const sessionId=mode==="grant"?String(fragment.get("session_id")||""):String(params.get("session_id")||"");
   const loading=document.getElementById("loading");
   const success=document.getElementById("success");
   const error=document.getElementById("error");
@@ -76,9 +94,8 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
   let completed=false;
   let sessionGate=null;
   const issuedV2Requests=new Set();
-  const config=window.RELAX_PURCHASE_BRIDGE_CONFIG;
-  const mode=config&&config.mode;
-  let v2Suspended=mode==="v2"&&document.visibilityState==="hidden";
+  const recheckMode=mode==="v2"||mode==="grant";
+  let v2Suspended=recheckMode&&document.visibilityState==="hidden";
   const errorText="確認できませんでした。決済をやり直さず、時間をおいてもう一度確認してください。";
 
   function trustedOrigin(origin){
@@ -228,15 +245,25 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 
   function load(){
     if(awaiting||completed)return;
-    if(mode==="v2"&&(v2Suspended||document.visibilityState==="hidden"))return;
-    if(params.getAll("session_id").length!==1||sessionId.length>256||!/^cs_(?:test|live)_[a-zA-Z0-9]+$/.test(sessionId)){
+    if(recheckMode&&(v2Suspended||document.visibilityState==="hidden"))return;
+    if((mode==="grant"?!validGrantBoot:(!boot.cleaned||!!boot.raw||params.getAll("session_id").length!==1))||
+      sessionId.length>256||!/^cs_(?:test|live)_[a-zA-Z0-9]+$/.test(sessionId)){
       showError("注文情報を確認できませんでした。");
       return;
     }
 
     let endpoint=GAS_URL,request;
     try{
-      if(mode==="v2"){
+      if(mode==="grant"){
+        endpoint=config.endpointUrl;
+        if(typeof endpoint!=="string"||!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)||
+          typeof window.RelaxPurchaseGrantSession!=="function")throw Error("GRANT_NOT_READY");
+        if(!sessionGate)sessionGate=window.RelaxPurchaseGrantSession({sessionId:sessionId,
+          grant:fragment.get("view_grant"),parentOrigin:location.origin});
+        request=sessionGate.begin();
+        if(issuedV2Requests.has(request.request_id))throw Error("REQUEST_REUSED");
+        issuedV2Requests.add(request.request_id);
+      }else if(mode==="v2"){
         endpoint=config.endpointUrl;
         // Static configuration pins the exact reviewed deployment. No URL or
         // message override, query parameters, or fallback to the side-effectful
@@ -259,7 +286,6 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     success.hidden=true;
     error.style.display="none";
     awaiting=true;
-    const q=new URLSearchParams(request);
 
     clearTimeout(timer);
     timer=setTimeout(function(){
@@ -267,11 +293,27 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     },20000);
     // Start the timeout before navigation so an immediate mock/bridge reply
     // cannot leave a new timer behind after rendering.
-    bridge.src=endpoint+"?"+q.toString()+"&_="+Date.now();
+    if(mode==="grant"){
+      // Only the POST body carries the grant. Remove the temporary controls
+      // after submission so the secret is not retained in the DOM.
+      let form;
+      try{
+        bridge.name="purchase_view_"+request.request_id;
+        form=document.createElement("form");form.method="post";form.action=endpoint;
+        form.target=bridge.name;form.hidden=true;
+        Object.keys(request).forEach(function(key){const input=document.createElement("input");
+          input.type="hidden";input.name=key;input.value=request[key];form.appendChild(input);});
+        document.body.appendChild(form);form.submit();
+      }catch(_){showError(errorText);}
+      finally{if(form)form.remove();}
+    }else{
+      const q=new URLSearchParams(request);
+      bridge.src=endpoint+"?"+q.toString()+"&_="+Date.now();
+    }
   }
 
   window.addEventListener("message",function(e){
-    if(mode==="v2"){
+    if(recheckMode){
       if(!awaiting||completed||!sessionGate)return;
       let result;
       try{result=sessionGate.accept(e);}catch(_){showError(errorText);return;}
@@ -311,16 +353,16 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     error.style.display="none";
   }
   function suspendV2(){
-    if(mode!=="v2")return;
+    if(!recheckMode)return;
     v2Suspended=true;
     clearRestoredView();
   }
   function resumeV2(){
-    if(mode!=="v2"||!v2Suspended||document.visibilityState==="hidden")return;
+    if(!recheckMode||!v2Suspended||document.visibilityState==="hidden")return;
     v2Suspended=false;
     load();
   }
-  // Only v2 is read-only by contract. Never re-run legacy fulfillment on return.
+  // v2 and grant reads confirm afresh. Never re-run legacy on return.
   // Hide private DOM and cancel the old challenge on either kind of departure.
   // pageshow and visibilitychange may both signal the same return, in either
   // order; consume the suspended state once to avoid duplicate confirmations.

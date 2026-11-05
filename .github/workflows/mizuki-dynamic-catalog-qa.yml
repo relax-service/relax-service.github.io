@@ -12,6 +12,7 @@ on:
       - 'story/purchase-success/index.html'
       - 'tests/purchase-success-display.test.cjs'
       - 'tests/purchase-success-v2.test.cjs'
+      - 'tests/purchase-success-grant.test.cjs'
       - 'tests/fixtures/purchase-bridge/**'
       - 'assets/js/purchase-bridge-*.js'
       - '.github/workflows/mizuki-dynamic-catalog-qa.yml'
@@ -39,3 +40,4 @@ jobs:
           node tests/mizuki-catalog-expiry.test.cjs
           node tests/purchase-success-display.test.cjs
           node tests/purchase-success-v2.test.cjs
+          node tests/purchase-success-grant.test.cjs
