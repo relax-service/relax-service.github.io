@@ -27,6 +27,13 @@ window.LP_CONFIG = Object.freeze({
     timezone: 'Asia/Tokyo',
     days: 7
   },
+  // One-time deployment URL for generic, approved consultant catalog.
+  // Intentionally blank until the separate company-owned GAS passes QA.
+  // New counselors are registered in the private master, NOT in this file.
+  catalog: {
+    statusUrl: '',
+    segment: 'mizuki'
+  },
   // Purchase links for the current public LP are rendered explicitly in story/mizuki/index.html.
   // Do not keep test Stripe URLs in production configuration.
   payments: {
