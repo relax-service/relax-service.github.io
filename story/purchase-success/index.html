@@ -58,7 +58,7 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
 </section>
 
 <section id="error" class="error" aria-live="polite">
-<h1>確認に時間がかかっています</h1>
+<h1 id="error-title">確認に時間がかかっています</h1>
 <p id="error-message">お支払い直後は反映に少し時間がかかる場合があります。</p>
 <button class="btn" type="button" id="retry">もう一度確認する</button>
 <p class="small">決済自体をもう一度行う必要はありません。</p>
@@ -248,7 +248,11 @@ h1{font-size:24px;line-height:1.45;margin:0 0 8px}
     if(recheckMode&&(v2Suspended||document.visibilityState==="hidden"))return;
     if((mode==="grant"?!validGrantBoot:(!boot.cleaned||!!boot.raw||params.getAll("session_id").length!==1))||
       sessionId.length>256||!/^cs_(?:test|live)_[a-zA-Z0-9]+$/.test(sessionId)){
-      showError("注文情報を確認できませんでした。");
+      if(mode==="grant"){
+        document.getElementById("error-title").textContent="購入メールをご確認ください";
+        document.getElementById("retry").hidden=true;
+        showError("購入メールに記載した確認リンクからお進みください。メールが届かない場合は、決済をやり直さず運営へご確認ください。");
+      }else showError("注文情報を確認できませんでした。");
       return;
     }
 
