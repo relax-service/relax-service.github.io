@@ -11,14 +11,14 @@ class Element{
  querySelectorAll(s){return this.children.filter(c=>s.startsWith('[data-catalog-generated')?c.dataset.catalogGenerated==='true':c.className==='person'&&c.dataset.counselorId);}
 }
 const settle=()=>new Promise(r=>setImmediate(r));
-function fixture(initialNow='2026-10-24T12:00:00Z'){
+function fixture(initialNow='2026-10-24T12:00:00Z',initiallyHidden=false){
  let now=Date.parse(initialNow),serial=0,refresh;
  const timers=new Map(),requests=[],listeners={};
  const container=new Element('div'),legacy=new Element('article'),status=new Element('p');
  legacy.className='person';legacy.dataset.counselorId='0000-3';container.appendChild(legacy);
- const window={LP_CONFIG:{catalog:{statusUrl:'https://script.google.com/macros/s/MockQA123/exec',segment:'mizuki'}},setInterval:fn=>{refresh=fn;}};
+ const window={LP_CONFIG:{catalog:{statusUrl:'https://script.google.com/macros/s/MockQA123/exec',segment:'mizuki'}},setInterval:fn=>{refresh=fn;},addEventListener:(k,fn)=>listeners[k]=fn};
  const head=new Element('head');head.appendChild=n=>{Element.prototype.appendChild.call(head,n);requests.push(new URL(n.src).searchParams.get('callback'));return n;};
- const document={head,hidden:false,querySelector:()=>container,getElementById:()=>status,createElement:t=>new Element(t),createDocumentFragment:()=>new Element('fragment'),addEventListener:(k,fn)=>listeners[k]=fn};
+ const document={head,hidden:initiallyHidden,querySelector:()=>container,getElementById:()=>status,createElement:t=>new Element(t),createDocumentFragment:()=>new Element('fragment'),addEventListener:(k,fn)=>listeners[k]=fn};
  class ClockDate extends Date{static now(){return now;}}
  const ctx={document,window,URL,Intl,Date:ClockDate,Math,Promise,Set,Number,console,
   setTimeout:(fn,ms)=>{timers.set(++serial,{at:now+ms,fn});return serial;},clearTimeout:id=>timers.delete(id)};
@@ -29,16 +29,42 @@ function fixture(initialNow='2026-10-24T12:00:00Z'){
  const tick=async ms=>{const end=now+ms;for(;;){const item=[...timers].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!item)break;now=item[1].at;timers.delete(item[0]);item[1].fn();await settle();}now=end;};
  const dynamic=()=>container.children.filter(c=>c.dataset.catalogGenerated==='true');
  return {person,data,reply,tick,dynamic,requests,status,callback:i=>window[requests[i]],refresh:()=>refresh(),
-  resume:async ms=>{now+=ms;listeners.visibilitychange();await settle();},
+  resume:async ms=>{now+=ms;document.hidden=false;listeners.visibilitychange();await settle();},
+  visibility:async hidden=>{document.hidden=hidden;listeners.visibilitychange();await settle();},
+  lifecycle:async(k,e={})=>{if(listeners[k])listeners[k](e);await settle();},
   assertLegacy:()=>assert.equal(container.children[0],legacy)};
 }
 const descendants=n=>n.children.flatMap(c=>[c,...descendants(c)]);
 const cases=[];const test=(name,fn)=>cases.push([name,fn]);
+
+test('hiding a tab clears generated cards and checkout before another response',async()=>{const f=fixture();await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);await f.visibility(true);assert.equal(f.dynamic().length,0);f.assertLegacy();});
+
+test('a response started before hiding cannot restore cards on return',async()=>{const f=fixture(),old=f.data(f.person());await f.visibility(true);await f.visibility(false);assert.equal(f.requests.length,2);await f.reply(old,0);assert.equal(f.dynamic().length,0);});
+
+test('cached page restoration clears availability until a new response arrives',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.lifecycle('pagehide',{persisted:true});await f.lifecycle('pageshow',{persisted:true});assert.equal(f.dynamic().length,0);assert.equal(f.requests.length,2);f.assertLegacy();});
+
+test('late response while hidden cannot recreate checkout',async()=>{const f=fixture(),old=f.data(f.person());await f.visibility(true);await f.reply(old,0);assert.equal(f.dynamic().length,0);f.assertLegacy();});
+
+test('hidden intervals start no new requests',async()=>{const f=fixture();await f.visibility(true);f.refresh();f.refresh();await f.tick(20000);assert.equal(f.requests.length,1);assert.equal(f.dynamic().length,0);});
+
+test('an initially hidden page waits for visibility before its first request',async()=>{const f=fixture(undefined,true);assert.equal(f.requests.length,0);f.refresh();assert.equal(f.requests.length,0);await f.visibility(false);assert.equal(f.requests.length,1);await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);});
+
+test('visibility then pageshow starts only one restoration request',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.visibility(true);await f.lifecycle('pagehide',{persisted:true});await f.visibility(false);await f.lifecycle('pageshow',{persisted:true});assert.equal(f.requests.length,2);assert.equal(f.dynamic().length,0);await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);});
+
+test('pageshow while hidden waits for visible and starts only one request',async()=>{const f=fixture();await f.visibility(true);await f.lifecycle('pagehide',{persisted:true});await f.lifecycle('pageshow',{persisted:true});assert.equal(f.requests.length,1);await f.visibility(false);assert.equal(f.requests.length,2);});
+
+test('deleted schedule stays absent after fresh empty restoration',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.lifecycle('pagehide',{persisted:true});await f.lifecycle('pageshow',{persisted:true});const empty=f.data(f.person());empty.counselors=[];await f.reply(empty);assert.equal(f.dynamic().length,0);assert.match(f.status.textContent,/待機予定はありません/);f.assertLegacy();});
+
+test('failed restoration cannot expose old checkout and later fresh response recovers',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.visibility(true);await f.visibility(false);await f.tick(20000);assert.equal(f.dynamic().length,0);assert.match(f.status.textContent,/取得できません/);f.refresh();await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);});
+
+test('pre-hide request cannot overwrite new schedule after restoration',async()=>{const f=fixture(),old=f.data(f.person());old.counselors[0].displayName='以前の予定';await f.visibility(true);await f.visibility(false);const fresh=f.data(f.person());fresh.counselors[0].displayName='更新した予定';await f.reply(fresh);await f.reply(old,0);assert.equal(descendants(f.dynamic()[0]).find(n=>n.className==='person-name').textContent,'更新した予定');});
+
+test('ordinary initial pageshow does not duplicate the initial request',async()=>{const f=fixture();await f.lifecycle('pageshow',{persisted:false});assert.equal(f.requests.length,1);});
 test('last slot ends without a new response: expired card and purchase disappear',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));assert.equal(f.dynamic().length,1);await f.tick(2000);assert.equal(f.dynamic().length,0);f.assertLegacy();});
 test('one slot ends: next future slot and purchase remain',async()=>{const f=fixture(),p=f.person(2000);p.slots.push(...f.person(3600000).slots);await f.reply(f.data(p));await f.tick(2000);assert.equal(f.dynamic().length,1);assert.equal(descendants(f.dynamic()[0]).filter(c=>c.tag==='li').length,1);});
 test('five-minute snapshot limit applies while a new request is still pending',async()=>{const f=fixture();await f.reply(f.data(f.person(),299000));f.refresh();await f.tick(1000);assert.equal(f.dynamic().length,0);assert.match(f.status.textContent,/取得できません/);});
 test('exact five-minute-old response cannot restore purchase',async()=>{const f=fixture();await f.reply(f.data(f.person(),300000));assert.equal(f.dynamic().length,0);});
-test('returning from a suspended tab clears stale purchase before network response',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.resume(360000);assert.equal(f.dynamic().length,0);assert.equal(f.requests.length,2);});
+test('returning from a suspended tab clears stale purchase before network response',async()=>{const f=fixture();await f.reply(f.data(f.person()));await f.visibility(true);await f.resume(360000);assert.equal(f.dynamic().length,0);assert.equal(f.requests.length,2);});
 test('newer successful response replaces the previous expiry timer',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));await f.tick(1000);f.refresh();await f.reply(f.data(f.person()));await f.tick(1000);assert.equal(f.dynamic().length,1);});
 test('failed refresh cannot be resurrected by an older expiry callback',async()=>{const f=fixture();await f.reply(f.data(f.person(60000)));f.refresh();await f.tick(20000);assert.equal(f.dynamic().length,0);await f.tick(40000);assert.equal(f.dynamic().length,0);f.assertLegacy();});
 test('fresh data recovers normally after automatic expiry',async()=>{const f=fixture();await f.reply(f.data(f.person(2000)));await f.tick(2000);f.refresh();await f.reply(f.data(f.person()));assert.equal(f.dynamic().length,1);f.assertLegacy();});

@@ -32,7 +32,7 @@ class Element {
 const container=new Element('div');
 const umetsu=new Element('article');umetsu.className='person';umetsu.dataset.counselorId='0000-3';container.appendChild(umetsu);
 const status=new Element('p');
-const window={LP_CONFIG:{catalog:{statusUrl:'https://script.google.com/macros/s/MockQA123/exec',segment:'mizuki'}}};
+const window={LP_CONFIG:{catalog:{statusUrl:'https://script.google.com/macros/s/MockQA123/exec',segment:'mizuki'}},addEventListener:()=>{}};
 let nextRefresh=null;
 window.setInterval=(fn,ms)=>{assert.equal(ms,60000);nextRefresh=fn;return 1;};
 let payload={};

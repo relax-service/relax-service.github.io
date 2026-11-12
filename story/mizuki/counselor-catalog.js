@@ -15,7 +15,8 @@
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url))return;
   if(!/^[a-z0-9_-]{1,32}$/.test(segment))return;
   var requestId=0;
-  var rendered=null,expiryTimer=null;
+  var suspended=!!document.hidden;
+  var expiryTimer=null;
   var maxAge=5*60000;
 
   function linkAllowed(raw,provider){
@@ -176,7 +177,7 @@
     container.querySelectorAll('[data-catalog-generated="true"]').forEach(function(n){n.remove();});
   }
   function forgetDynamic(){
-    clearTimeout(expiryTimer);expiryTimer=null;rendered=null;
+    clearTimeout(expiryTimer);expiryTimer=null;
     clearDynamic();
   }
   function render(data,deadline){
@@ -193,7 +194,6 @@
     // A pending request must not extend the life of an older snapshot.
     // Retain this deadline on timer/visibility rechecks, including clock skew.
     deadline=deadline===undefined?Math.min(now+maxAge,Date.parse(data.refreshedAt)+maxAge):deadline;
-    rendered={data:data,deadline:deadline};
     var nextExpiry=deadline;
     var seen=new Set(Array.from(container.querySelectorAll('.person[data-counselor-id]'))
       .map(function(c){return c.dataset.counselorId;}));
@@ -236,17 +236,28 @@
     });
   }
   function refresh(){
+    if(suspended||document.hidden)return;
     var seq=++requestId;
-    jsonp().then(function(data){if(seq===requestId)render(data);},function(){
-      if(seq!==requestId)return;
+    jsonp().then(function(data){if(seq===requestId&&!suspended&&!document.hidden)render(data);},function(){
+      if(seq!==requestId||suspended||document.hidden)return;
       forgetDynamic();status.textContent='ほかの話し手の予定を取得できません。時間をおいてお試しください。';
     });
   }
+  function suspend(){
+    suspended=true;
+    ++requestId; // Invalidate responses started before hiding or leaving.
+    forgetDynamic();
+    status.textContent='ほかの話し手の待機予定を確認しています。';
+  }
+  function resume(){
+    if(document.hidden||!suspended)return;
+    suspended=false;
+    refresh(); // Show only a new response; do not reuse pre-departure cards.
+  }
   refresh();
   window.setInterval(refresh,60000);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden){
-    if(rendered)render(rendered.data,rendered.deadline);
-    refresh();
-  }});
+  document.addEventListener('visibilitychange',function(){if(document.hidden)suspend();else resume();});
+  window.addEventListener('pagehide',suspend);
+  window.addEventListener('pageshow',resume);
 })();
 
