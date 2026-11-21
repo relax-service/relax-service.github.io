@@ -81,6 +81,22 @@ test('a slow response cannot extend the snapshot freshness limit',async()=>{cons
 
 test('a slot ending during a slow request cannot create a purchase card',async()=>{const f=fixture(),payload=f.data(f.person(8000));await f.tick(9430);await f.reply(payload);assert.equal(f.dynamic().length,0);f.assertLegacy();});
 
+test('Sunday to Monday JST shifts the two-week window without cutting a multi-day slot',async()=>{
+ const weekend=fixture('2026-11-22T23:59:00+09:00');
+ const monday=fixture('2026-11-23T00:00:00+09:00');
+ const crossing={start:'2026-11-29T22:00:00+09:00',end:'2026-12-01T01:00:00+09:00'};
+ const outside={start:'2026-11-30T00:00:00+09:00',end:'2026-11-30T02:00:00+09:00'};
+ const labels=f=>f.dynamic().flatMap(card=>descendants(card).filter(n=>n.tag==='li').map(n=>n.textContent));
+ const p=weekend.person(); p.slots=[outside,crossing];
+ await weekend.reply(weekend.data(p));
+ assert.deepEqual(labels(weekend),['11/29(日) 22:00〜12/1(火) 01:00']);
+ weekend.refresh(); p.slots=[outside];
+ await weekend.reply(weekend.data(p));
+ assert.equal(weekend.dynamic().length,0); weekend.assertLegacy();
+ await monday.reply(monday.data(p));
+ assert.deepEqual(labels(monday),['11/30(月) 00:00〜02:00']); monday.assertLegacy();
+});
+
 const dateCases=[
  ['multi-day slot shows its actual ending date instead of the next day','2026-10-24T12:00:00Z','2026-10-24T14:00:00Z','2026-10-25T16:00:00Z','10/24(土) 23:00〜10/26(月) 01:00'],
  ['overnight slot names both dates in Japan time','2026-10-24T12:00:00Z','2026-10-24T14:00:00Z','2026-10-24T16:00:00Z','10/24(土) 23:00〜10/25(日) 01:00'],

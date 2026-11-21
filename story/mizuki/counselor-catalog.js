@@ -82,12 +82,19 @@
     return node;
   }
   function appendText(parent,tag,cls,text){var n=element(tag,cls,text);parent.appendChild(n);return n;}
-  function safeSlots(person,now){
+  function nextTwoWeeksEnd(now){
+    // Calculate the Monday after next week in Japan time, regardless of the visitor’s clock zone.
+    var jstOffset=9*60*60*1000;
+    var day=new Date(now+jstOffset);
+    var daysSinceMonday=(day.getUTCDay()+6)%7;
+    return Date.UTC(day.getUTCFullYear(),day.getUTCMonth(),day.getUTCDate()+14-daysSinceMonday)-jstOffset;
+  }
+  function safeSlots(person,now,windowEnd){
     if(!Array.isArray(person.slots))return [];
     return person.slots.map(function(slot){
       if(!slot||typeof slot.start!=='string'||typeof slot.end!=='string')return null;
       var start=Date.parse(slot.start),end=Date.parse(slot.end);
-      if(!Number.isFinite(start)||!Number.isFinite(end)||end<=now||end<=start||start>now+60*86400000)return null;
+      if(!Number.isFinite(start)||!Number.isFinite(end)||end<=now||end<=start||start>=windowEnd)return null;
       return {start:new Date(start),end:new Date(end)};
     }).filter(Boolean).sort(function(a,b){return a.start-b.start;}).slice(0,12);
   }
@@ -108,7 +115,7 @@
     var same=dayKey(slot.start)===dayKey(slot.end);
     return dayLabel(slot.start)+' '+timeLabel(slot.start)+'〜'+(same?'':dayLabel(slot.end)+' ')+timeLabel(slot.end);
   }
-  function build(person,now){
+  function build(person,now,windowEnd){
     if(!person||typeof person!=='object'||typeof person.consultantNo!=='string')return null;
     if(!/^[0-9]{2,8}(?:-[0-9]{1,6})?$/.test(person.consultantNo))return null;
     if(!person.displayName || typeof person.displayName!=='string'||person.displayName.length>100)return null;
@@ -124,7 +131,7 @@
       typeof person.roleLabel!=='string'||!person.roleLabel.trim()||
       (person.audioPath&&!voice)||!Number.isInteger(rate)||rate<1||rate>10000||
       (person.initialOffer&&!initial))return null;
-    var slots=safeSlots(person,now);
+    var slots=safeSlots(person,now,windowEnd);
     if(!slots.length)return null; // No verified future slot; no purchasing.
     var card=element('article','person');
     card.dataset.counselorId=person.consultantNo;
@@ -143,7 +150,7 @@
     audio.controls=true;audio.playsInline=true;audio.preload='none';audio.src=voice;
     audioBlock.appendChild(audio);card.appendChild(audioBlock);}
     var schedule=element('div','schedule');
-    var title=element('div','schedule-head');appendText(title,'b','','待機予定（日本時間）');schedule.appendChild(title);
+    var title=element('div','schedule-head');appendText(title,'b','','今週・来週の待機予定（日本時間）');schedule.appendChild(title);
     var ul=element('ul','schedule-list');
     slots.forEach(function(s){appendText(ul,'li','',slotLabel(s));});
     schedule.appendChild(ul);card.appendChild(schedule);
@@ -198,11 +205,12 @@
     var seen=new Set(Array.from(container.querySelectorAll('.person[data-counselor-id]'))
       .map(function(c){return c.dataset.counselorId;}));
     var fragment=document.createDocumentFragment(),added=0;
+    var windowEnd=nextTwoWeeksEnd(now);
     data.counselors.forEach(function(p){
       if(!p||seen.has(p.consultantNo))return;
-      var card=build(p,now);
+      var card=build(p,now,windowEnd);
       if(card){seen.add(p.consultantNo);fragment.appendChild(card);added++;
-        safeSlots(p,now).forEach(function(s){nextExpiry=Math.min(nextExpiry,s.end.getTime());});
+        safeSlots(p,now,windowEnd).forEach(function(s){nextExpiry=Math.min(nextExpiry,s.end.getTime());});
       }
     });
     container.appendChild(fragment);
