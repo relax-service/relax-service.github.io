@@ -219,10 +219,21 @@
     return new Promise((resolve,reject)=>{
       const cb='__lpStatus_'+Date.now()+'_'+Math.random().toString(36).slice(2);
       const script=document.createElement('script');
-      const timer=setTimeout(()=>finish(new Error('jsonp timeout')),8000);
-      function finish(err,data){
+      let done=false;
+      // A real Google response arrived after the old eight-second deadline.
+      const timer=setTimeout(()=>finish(new Error('jsonp timeout'),undefined,true),20000);
+      function finish(err,data,allowLateResponse=false){
+        if(done)return;
+        done=true;
         clearTimeout(timer);
-        try{ delete window[cb]; }catch(_){}
+        if(allowLateResponse){
+          // Removed JSONP scripts can still execute after a timeout. Ignore the
+          // late result for one minute without restoring an expired request.
+          window[cb]=()=>{};
+          setTimeout(()=>{try{delete window[cb];}catch(_){}},60000);
+        }else{
+          try{delete window[cb];}catch(_){}
+        }
         script.remove();
         err ? reject(err) : resolve(data);
       }
